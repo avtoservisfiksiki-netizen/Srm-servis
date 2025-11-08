@@ -1,0 +1,443 @@
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>СТО Фіксики — CRM</title>
+
+  <!-- SheetJS для експорту XLSX -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+
+  <style>
+    :root{
+      --bg:#06080a;
+      --panel:#0e1518;
+      --muted:#94a3b8;
+      --accent:#2f9cff;
+      --card:#0b1114;
+      --glass: rgba(255,255,255,0.03);
+      --success:#2ecc71;
+      --danger:#ff6b6b;
+    }
+    *{box-sizing:border-box;font-family:Inter, Roboto, Arial, sans-serif}
+    body{margin:0;background:linear-gradient(180deg,var(--bg),#041018);color:#e6eef5;min-height:100vh}
+    .app{display:flex;min-height:100vh}
+    .sidebar{width:260px;background:linear-gradient(180deg,var(--panel),#081011);padding:18px;display:flex;flex-direction:column;gap:14px}
+    .brand{font-weight:800;font-size:20px;text-align:center}
+    .menu button{display:flex;align-items:center;gap:12px;width:100%;padding:10px;border-radius:10px;border:0;background:transparent;color:var(--muted);cursor:pointer}
+    .menu button.active{background:linear-gradient(90deg,rgba(47,156,255,0.12),rgba(47,156,255,0.06));color:var(--accent)}
+    .menu button:hover{background:rgba(255,255,255,0.02);color:#fff}
+    .main{flex:1;padding:20px;overflow:auto}
+    .header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;gap:8px;flex-wrap:wrap}
+    h1{margin:0;font-size:18px}
+    .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:12px}
+    .stat{background:var(--card);padding:12px;border-radius:12px;box-shadow:0 6px 18px rgba(0,0,0,0.45);text-align:center}
+    .stat .label{color:var(--muted);font-size:13px}
+    .stat .value{font-size:20px;font-weight:700;margin-top:6px;color:var(--accent)}
+    .card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); padding:14px;border-radius:12px}
+    .row{display:flex;gap:12px;align-items:center}
+    .btn{padding:8px 12px;border-radius:10px;border:0;background:var(--accent);color:#061017;cursor:pointer}
+    .btn.secondary{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted)}
+    .btn.ghost{background:transparent;color:var(--muted);border-radius:8px;padding:6px 8px}
+    .table{width:100%;border-collapse:collapse;margin-top:12px}
+    .table th, .table td{padding:10px;text-align:left;border-bottom:1px solid rgba(255,255,255,0.03);font-size:14px}
+    input, textarea, select{background:transparent;border:1px solid rgba(255,255,255,0.04);color:inherit;padding:8px;border-radius:8px;outline:none}
+    .form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
+    .actions{display:flex;gap:8px;align-items:center}
+    .floating{position:fixed;right:22px;bottom:22px;z-index:40}
+    .muted{color:var(--muted)}
+    .chip{background:rgba(255,255,255,0.02);padding:6px 8px;border-radius:999px;font-size:13px;color:var(--muted)}
+    .small{font-size:13px;color:var(--muted)}
+    .tag-paid{color:var(--success);font-weight:700}
+    .tag-unpaid{color:var(--danger);font-weight:700}
+    .flex-col{display:flex;flex-direction:column;gap:8px}
+    @media (max-width:900px){ .sidebar{display:none} .main{padding:12px} }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar" role="navigation" aria-label="Меню">
+      <div>
+        <div class="brand">СТО Фіксики</div>
+        <div class="small muted" style="text-align:center;margin-top:6px">CRM • демо</div>
+
+        <nav class="menu" style="margin-top:12px">
+          <button class="active" data-view="dashboard">Головна</button>
+          <button data-view="clients">Клієнти</button>
+          <button data-view="orders">Наряди</button>
+          <button data-view="services">Послуги</button>
+          <button data-view="stock">Склад</button>
+          <button data-view="payments">Оплати</button>
+          <button data-view="settings">Налаштування</button>
+        </nav>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div class="small muted">Дані збережено локально</div>
+        <div style="display:flex;gap:6px">
+          <button id="export-json" class="btn ghost" title="Експорт у JSON">Експорт JSON</button>
+          <button id="export-xlsx" class="btn ghost" title="Експорт у XLSX">Експорт XLSX</button>
+        </div>
+        <div style="display:flex;gap:6px">
+          <label class="ghost" style="cursor:pointer;padding:6px 8px;border-radius:8px;border:1px dashed rgba(255,255,255,0.04);text-align:center">
+            Імпорт JSON
+            <input id="import-file" type="file" accept=".json" style="display:none">
+          </label>
+          <button id="clear-all" class="btn ghost" title="Очистити всі локальні дані">Очистити</button>
+        </div>
+        <div class="small muted" style="margin-top:8px">Робітників: 4 • Орієнт. 20 кл./міс</div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="header">
+        <h1 id="page-title">Головна</h1>
+        <div class="row">
+          <input id="search" placeholder="Пошук: клієнт, авто, телефон..." style="min-width:220px" />
+          <div class="actions">
+            <button id="btn-add-client" class="btn">Додати клієнта</button>
+            <button id="btn-add-order" class="btn secondary">Новий наряд</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="content">
+        <!-- Dashboard -->
+        <div id="view-dashboard" class="view">
+          <div class="stats">
+            <div class="stat card">
+              <div class="label">Авто в роботі</div>
+              <div class="value" id="stat-inwork">0</div>
+            </div>
+            <div class="stat card">
+              <div class="label">Клієнтів у базі</div>
+              <div class="value" id="stat-clients">0</div>
+            </div>
+            <div class="stat card">
+              <div class="label">Невиконані наряди</div>
+              <div class="value" id="stat-open-orders">0</div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <strong>Останні наряди</strong>
+              <div class="small muted" id="last-updated">—</div>
+            </div>
+            <table class="table" id="recent-orders">
+              <thead><tr><th>Наряд</th><th>Клієнт</th><th>Авто</th><th>Статус</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Clients -->
+        <div id="view-clients" class="view" style="display:none">
+          <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+              <div><strong>Клієнти</strong><div class="small muted">Список клієнтів та авто</div></div>
+              <div class="small muted">Знайдено: <span id="clients-count">0</span></div>
+            </div>
+
+            <table class="table" id="clients-table">
+              <thead><tr><th>Ім'я</th><th>Телефон</th><th>Авто</th><th>Нотатки</th><th>Дії</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Orders -->
+        <div id="view-orders" class="view" style="display:none">
+          <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+              <div><strong>Наряди</strong><div class="small muted">Створення та управління нарядами</div></div>
+              <div class="small muted">Всього: <span id="orders-count">0</span></div>
+            </div>
+
+            <table class="table" id="orders-table">
+              <thead><tr><th>№</th><th>Клієнт</th><th>Авто</th><th>Послуги/деталі</th><th>Сума</th><th>Статус</th><th>Дії</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Services -->
+        <div id="view-services" class="view" style="display:none">
+          <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+              <div><strong>Послуги</strong><div class="small muted">Словник послуг і ціни</div></div>
+              <div class="actions">
+                <button id="btn-add-service" class="btn">Додати послугу</button>
+              </div>
+            </div>
+
+            <table class="table" id="services-table">
+              <thead><tr><th>Назва</th><th>Ціна</th><th>Дії</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Stock -->
+        <div id="view-stock" class="view" style="display:none">
+          <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+              <div><strong>Склад</strong><div class="small muted">Запчастини та розхідники</div></div>
+              <div class="actions">
+                <button id="btn-add-stock" class="btn">Додати товар</button>
+              </div>
+            </div>
+
+            <table class="table" id="stock-table">
+              <thead><tr><th>Назва</th><th>Кіл-ть</th><th>Мінімум</th><th>Ціна</th><th>Дії</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Payments -->
+        <div id="view-payments" class="view" style="display:none">
+          <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+              <div><strong>Оплати</strong><div class="small muted">Статус оплат по нарядах</div></div>
+            </div>
+
+            <table class="table" id="payments-table">
+              <thead><tr><th>Наряд</th><th>Клієнт</th><th>Сума</th><th>Оплачено</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Settings -->
+        <div id="view-settings" class="view" style="display:none">
+          <div class="card">
+            <strong>Налаштування</strong>
+            <div class="small muted" style="margin-top:8px">Локальне збереження: <span id="ls-key">sf_data_v1</span></div>
+            <div style="margin-top:12px" class="flex-col">
+              <button id="btn-reset-demo" class="btn secondary">Відновити демо-дані</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- Modals (Add client, Add service, Add stock, New order) -->
+  <div id="modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);align-items:center;justify-content:center;padding:20px;z-index:60">
+    <div id="modal-inner" style="max-width:900px;width:100%;background:var(--panel);padding:16px;border-radius:12px">
+      <!-- content injected by JS -->
+    </div>
+  </div>
+
+<script>
+/* ---------- App data & localStorage ---------- */
+const LS_KEY = 'sf_data_v1';
+let state = {
+  clients: [],      // {id,name,phone,car,note,created}
+  services: [],     // {id,name,price}
+  stock: [],        // {id,name,qty,min,price}
+  orders: [],       // {id,clientId,car,items:[{type:'service'|'stock',id,qty,price}], total, status, created, paid}
+};
+
+/* ---------- Utilities ---------- */
+function uid(prefix='id'){ return prefix + '_' + Date.now().toString(36) + Math.floor(Math.random()*1000).toString(36); }
+function saveState(){ localStorage.setItem(LS_KEY, JSON.stringify(state)); renderAll(); }
+function loadState(){ try{ const r = localStorage.getItem(LS_KEY); if(r) state = JSON.parse(r); }catch(e){ console.error(e); } }
+function formatPrice(n){ return (Number(n)||0).toFixed(2) + ' ₴'; }
+function findClient(id){ return state.clients.find(c=>c.id===id) || null; }
+function now(){ return new Date().toLocaleString(); }
+
+/* ---------- Initial demo data helper ---------- */
+function seedDemo(){
+  state = {
+    clients: [
+      {id:uid('c'), name:'Іван Петров', phone:'+380971234567', car:'VW Passat', note:'Регулярний клієнт', created:Date.now()},
+      {id:uid('c'), name:'Олег Коваль', phone:'+380631112233', car:'Mercedes Sprinter', note:'Доставка', created:Date.now()},
+    ],
+    services: [
+      {id:uid('s'), name:'Заміна масла', price:800},
+      {id:uid('s'), name:'Ремонт ходової', price:2500},
+      {id:uid('s'), name:'Діагностика електрики', price:600},
+    ],
+    stock: [
+      {id:uid('p'), name:'Фільтр масляний', qty:10, min:2, price:120},
+      {id:uid('p'), name:'Масло 5W-40 (1л)', qty:25, min:5, price:350},
+    ],
+    orders: [
+      {id:uid('o'), clientId:null, car:'VW Passat', items:[], total:0, status:'готово', created:Date.now(), paid:true},
+    ],
+  };
+  saveState();
+}
+
+/* ---------- Rendering ---------- */
+const menuBtns = document.querySelectorAll('.menu button');
+const views = document.querySelectorAll('.view');
+const pageTitle = document.getElementById('page-title');
+const searchInput = document.getElementById('search');
+
+function switchView(view){
+  menuBtns.forEach(b=>b.classList.toggle('active', b.dataset.view===view));
+  views.forEach(v=>v.style.display = v.id === 'view-' + view ? 'block' : 'none');
+  pageTitle.textContent = {
+    'dashboard':'Головна',
+    'clients':'Клієнти',
+    'orders':'Наряди',
+    'services':'Послуги',
+    'stock':'Склад',
+    'payments':'Оплати',
+    'settings':'Налаштування'
+  }[view] || 'СТО Фіксики';
+  if(view === 'clients') renderClients();
+  if(view === 'orders') renderOrders();
+  if(view === 'services') renderServices();
+  if(view === 'stock') renderStock();
+  if(view === 'payments') renderPayments();
+  if(view === 'dashboard') renderDashboard();
+}
+
+menuBtns.forEach(b=> b.addEventListener('click', ()=> switchView(b.dataset.view)));
+
+/* Render all */
+function renderAll(){
+  renderDashboard();
+  renderClients();
+  renderOrders();
+  renderServices();
+  renderStock();
+  renderPayments();
+}
+
+/* Dashboard */
+function renderDashboard(){
+  document.getElementById('stat-clients').textContent = state.clients.length;
+  const open = state.orders.filter(o=>o.status !== 'виконано').length;
+  document.getElementById('stat-open-orders').textContent = open;
+  document.getElementById('stat-inwork').textContent = state.orders.filter(o=>o.status==='в роботі').length;
+  // recent orders
+  const tbody = document.querySelector('#recent-orders tbody');
+  tbody.innerHTML = '';
+  state.orders.slice(-6).reverse().forEach(o=>{
+    const tr = document.createElement('tr');
+    const client = findClient(o.clientId);
+    tr.innerHTML = `<td>${o.id}</td><td>${client?client.name:'—'}</td><td>${o.car||'—'}</td><td>${o.status}</td>`;
+    tbody.appendChild(tr);
+  });
+  document.getElementById('last-updated').textContent = state.orders.length ? new Date(state.orders[state.orders.length-1].created).toLocaleString() : '—';
+}
+
+/* Clients */
+function renderClients(filter=''){
+  const tbody = document.querySelector('#clients-table tbody');
+  tbody.innerHTML = '';
+  const q = (filter || searchInput.value || '').toLowerCase();
+  const list = state.clients.filter(c=> !q || (c.name+c.phone+c.car).toLowerCase().includes(q));
+  document.getElementById('clients-count').textContent = list.length;
+  list.forEach(c=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${escapeHtml(c.name)}</td><td class="small">${escapeHtml(c.phone)}</td><td class="small">${escapeHtml(c.car||'—')}</td><td class="small">${escapeHtml(c.note||'')}</td>
+      <td>
+        <div style="display:flex;gap:6px">
+          <button class="btn ghost" data-action="edit-client" data-id="${c.id}">Редагувати</button>
+          <button class="btn ghost" data-action="new-order" data-id="${c.id}">Наряд</button>
+          <button class="btn secondary" data-action="del-client" data-id="${c.id}">Видалити</button>
+        </div>
+      </td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+/* Orders */
+function renderOrders(){
+  const tbody = document.querySelector('#orders-table tbody');
+  tbody.innerHTML = '';
+  state.orders.forEach((o, idx)=>{
+    const client = findClient(o.clientId);
+    const itemsHtml = (o.items || []).map(it=>{
+      if(it.type==='service'){ const s = state.services.find(ss=>ss.id===it.id); return `${s?escapeHtml(s.name):'послуга'} x${it.qty}`; }
+      else { const p = state.stock.find(ss=>ss.id===it.id); return `${p?escapeHtml(p.name):'запчастина'} x${it.qty}`; }
+    }).join(', ');
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${idx+1}</td><td>${client?escapeHtml(client.name):'—'}</td><td>${escapeHtml(o.car||'—')}</td><td class="small">${itemsHtml}</td>
+      <td>${formatPrice(o.total)}</td><td>${o.status}${o.paid? ' • <span class="tag-paid">Оплачено</span>':' • <span class="tag-unpaid">Не оплачено</span>'}</td>
+      <td>
+        <div style="display:flex;gap:6px">
+          <button class="btn ghost" data-action="view-order" data-id="${o.id}">Відкрити</button>
+          <button class="btn secondary" data-action="delete-order" data-id="${o.id}">Видалити</button>
+        </div>
+      </td>`;
+    tbody.appendChild(tr);
+  });
+  document.getElementById('orders-count').textContent = state.orders.length;
+}
+
+/* Services */
+function renderServices(){
+  const tbody = document.querySelector('#services-table tbody');
+  tbody.innerHTML = '';
+  state.services.forEach(s=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${escapeHtml(s.name)}</td><td>${formatPrice(s.price)}</td><td>
+      <div style="display:flex;gap:6px">
+        <button class="btn ghost" data-action="edit-service" data-id="${s.id}">Ред.</button>
+        <button class="btn secondary" data-action="del-service" data-id="${s.id}">Видалити</button>
+      </div></td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+/* Stock */
+function renderStock(){
+  const tbody = document.querySelector('#stock-table tbody');
+  tbody.innerHTML = '';
+  state.stock.forEach(p=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${escapeHtml(p.name)}</td><td>${p.qty}</td><td>${p.min}</td><td>${formatPrice(p.price)}</td>
+      <td>
+        <div style="display:flex;gap:6px">
+          <button class="btn ghost" data-action="edit-stock" data-id="${p.id}">Ред.</button>
+          <button class="btn secondary" data-action="consume-stock" data-id="${p.id}">Списати</button>
+        </div>
+      </td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+/* Payments */
+function renderPayments(){
+  const tbody = document.querySelector('#payments-table tbody');
+  tbody.innerHTML = '';
+  state.orders.forEach(o=>{
+    const client = findClient(o.clientId);
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${o.id}</td><td>${client?escapeHtml(client.name):'—'}</td><td>${formatPrice(o.total)}</td><td>${o.paid?'<span class="tag-paid">Так</span>':'<button class="btn ghost" data-action="pay" data-id="'+o.id+'">Позначити оплату</button>'}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+/* ---------- Helpers ---------- */
+function escapeHtml(s){ if(!s) return ''; return String(s).replace(/[&<>"']/g, function(m){return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m]}); }
+
+/* ---------- UI actions: open modal helpers ---------- */
+const modal = document.getElementById('modal');
+const modalInner = document.getElementById('modal-inner');
+
+function openModal(html){
+  modalInner.innerHTML = html;
+  modal.style.display = 'flex';
+  // attach close button handler inside modal if exists
+  const closeBtn = modalInner.querySelector('[data-close]');
+  if(closeBtn) closeBtn.addEventListener('click', closeModal);
+}
+function closeModal(){ modal.style.display = 'none'; modalInner.innerHTML = ''; }
+
+/* Add client */
+document.getElementById('btn-add-client').addEventListener('click', ()=> {
+  openModal(`
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <strong>Додати клієнта</strong>
+      <button data-close class="btn secondary">Закрити</button>
+    </div>
+    <div class="form-
