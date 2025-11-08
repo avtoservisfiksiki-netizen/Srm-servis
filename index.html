@@ -3,9 +3,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>СТО Фіксики — CRM</title>
+  <title>СТО Фіксики — CRM (Повноцінна Версія)</title>
 
-  <!-- SheetJS для експорту XLSX -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 
   <style>
@@ -18,30 +17,40 @@
       --glass: rgba(255,255,255,0.03);
       --success:#2ecc71;
       --danger:#ff6b6b;
+      --warning:#f39c12;
     }
     *{box-sizing:border-box;font-family:Inter, Roboto, Arial, sans-serif}
     body{margin:0;background:linear-gradient(180deg,var(--bg),#041018);color:#e6eef5;min-height:100vh}
     .app{display:flex;min-height:100vh}
-    .sidebar{width:260px;background:linear-gradient(180deg,var(--panel),#081011);padding:18px;display:flex;flex-direction:column;gap:14px}
+    .sidebar{width:260px;background:linear-gradient(180deg,var(--panel),#081011);padding:18px;display:flex;flex-direction:column;gap:14px;position:sticky;top:0;height:100vh;flex-shrink:0}
     .brand{font-weight:800;font-size:20px;text-align:center}
-    .menu button{display:flex;align-items:center;gap:12px;width:100%;padding:10px;border-radius:10px;border:0;background:transparent;color:var(--muted);cursor:pointer}
-    .menu button.active{background:linear-gradient(90deg,rgba(47,156,255,0.12),rgba(47,156,255,0.06));color:var(--accent)}
+    .menu button{display:flex;align-items:center;gap:12px;width:100%;padding:10px;border-radius:10px;border:0;background:transparent;color:var(--muted);cursor:pointer;transition:all 0.15s ease}
+    .menu button.active{background:linear-gradient(90deg,rgba(47,156,255,0.12),rgba(47,156,255,0.06));color:var(--accent);font-weight:600}
     .menu button:hover{background:rgba(255,255,255,0.02);color:#fff}
     .main{flex:1;padding:20px;overflow:auto}
     .header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;gap:8px;flex-wrap:wrap}
-    h1{margin:0;font-size:18px}
+    h1{margin:0;font-size:24px;font-weight:700}
     .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:12px}
-    .stat{background:var(--card);padding:12px;border-radius:12px;box-shadow:0 6px 18px rgba(0,0,0,0.45);text-align:center}
+    .stat{background:var(--card);padding:12px;border-radius:12px;box-shadow:0 6px 18px rgba(0,0,0,0.45);text-align:center;border-left:4px solid var(--accent);transition:transform 0.2s ease}
+    .stat:hover{transform:translateY(-2px)}
     .stat .label{color:var(--muted);font-size:13px}
-    .stat .value{font-size:20px;font-weight:700;margin-top:6px;color:var(--accent)}
-    .card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); padding:14px;border-radius:12px}
+    .stat .value{font-size:24px;font-weight:800;margin-top:6px;color:var(--accent)}
+    .card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); padding:16px;border-radius:12px;box-shadow:0 4px 10px rgba(0,0,0,0.2)}
     .row{display:flex;gap:12px;align-items:center}
-    .btn{padding:8px 12px;border-radius:10px;border:0;background:var(--accent);color:#061017;cursor:pointer}
-    .btn.secondary{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted)}
-    .btn.ghost{background:transparent;color:var(--muted);border-radius:8px;padding:6px 8px}
+    .btn{padding:10px 14px;border-radius:10px;border:0;background:var(--accent);color:#061017;cursor:pointer;font-weight:600;transition:background 0.2s ease}
+    .btn:hover{background:#4fa8ff}
+    .btn.secondary{background:var(--panel);border:1px solid rgba(255,255,255,0.06);color:var(--muted);transition:background 0.2s ease, color 0.2s ease}
+    .btn.secondary:hover{background:rgba(255,255,255,0.05);color:#fff}
+    .btn.ghost{background:transparent;color:var(--muted);border-radius:8px;padding:8px 10px;border:1px solid transparent}
+    .btn.ghost:hover{border-color:rgba(255,255,255,0.1);color:#fff}
+    .btn.danger{background:var(--danger);color:#fff}
+    .btn:disabled{opacity:0.6;cursor:not-allowed}
     .table{width:100%;border-collapse:collapse;margin-top:12px}
-    .table th, .table td{padding:10px;text-align:left;border-bottom:1px solid rgba(255,255,255,0.03);font-size:14px}
-    input, textarea, select{background:transparent;border:1px solid rgba(255,255,255,0.04);color:inherit;padding:8px;border-radius:8px;outline:none}
+    .table th, .table td{padding:12px;text-align:left;border-bottom:1px solid rgba(255,255,255,0.03);font-size:14px}
+    .table th{font-weight:700;color:#fff}
+    .table tbody tr:hover{background:rgba(255,255,255,0.015)}
+    input, textarea, select{background:var(--card);border:1px solid rgba(255,255,255,0.06);color:inherit;padding:10px 12px;border-radius:8px;outline:none;transition:border-color 0.2s ease}
+    input:focus, textarea:focus, select:focus{border-color:var(--accent)}
     .form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
     .actions{display:flex;gap:8px;align-items:center}
     .floating{position:fixed;right:22px;bottom:22px;z-index:40}
@@ -50,42 +59,52 @@
     .small{font-size:13px;color:var(--muted)}
     .tag-paid{color:var(--success);font-weight:700}
     .tag-unpaid{color:var(--danger);font-weight:700}
-    .flex-col{display:flex;flex-direction:column;gap:8px}
-    @media (max-width:900px){ .sidebar{display:none} .main{padding:12px} }
+    .tag-low-stock{background:rgba(243, 156, 18, 0.2);color:var(--warning);padding:3px 8px;border-radius:4px;font-weight:600}
+    .flex-col{display:flex;flex-direction:column;gap:10px}
+    .modal-content{max-width:1000px;width:100%;background:var(--panel);padding:20px;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,0.5);overflow-y:auto;max-height:90vh}
+    .notification{position:fixed;bottom:20px;right:20px;background:var(--success);color:#fff;padding:10px 15px;border-radius:8px;z-index:2000;opacity:0;transition:opacity 0.3s ease}
+    .notification.error{background:var(--danger)}
+    .notification.active{opacity:1}
+    .order-item-row input, .order-item-row select { height: 40px; padding: 5px 8px; }
+    
+    @media (max-width:1024px) {
+        .modal-content { max-width: 95vw; }
+    }
+    @media (max-width:900px){ .sidebar{display:none} .main{padding:12px} .header{flex-direction:column;align-items:stretch} .row{flex-wrap:wrap} }
   </style>
 </head>
 <body>
   <div class="app">
     <aside class="sidebar" role="navigation" aria-label="Меню">
-      <div>
+      <div style="flex:1">
         <div class="brand">СТО Фіксики</div>
-        <div class="small muted" style="text-align:center;margin-top:6px">CRM • демо</div>
+        <div class="small muted" style="text-align:center;margin-top:6px">CRM • Повноцінна v1.0</div>
 
-        <nav class="menu" style="margin-top:12px">
-          <button class="active" data-view="dashboard">Головна</button>
-          <button data-view="clients">Клієнти</button>
-          <button data-view="orders">Наряди</button>
-          <button data-view="services">Послуги</button>
-          <button data-view="stock">Склад</button>
-          <button data-view="payments">Оплати</button>
-          <button data-view="settings">Налаштування</button>
+        <nav class="menu" style="margin-top:20px">
+          <button class="active" data-view="dashboard">🏠 Головна</button>
+          <button data-view="clients">👥 Клієнти</button>
+          <button data-view="orders">📋 Наряди</button>
+          <button data-view="services">🔧 Послуги</button>
+          <button data-view="stock">📦 Склад</button>
+          <button data-view="payments">💳 Оплати</button>
+          <button data-view="settings">⚙️ Налаштування</button>
         </nav>
       </div>
 
-      <div style="display:flex;flex-direction:column;gap:8px">
+      <div style="display:flex;flex-direction:column;gap:10px">
         <div class="small muted">Дані збережено локально</div>
         <div style="display:flex;gap:6px">
-          <button id="export-json" class="btn ghost" title="Експорт у JSON">Експорт JSON</button>
-          <button id="export-xlsx" class="btn ghost" title="Експорт у XLSX">Експорт XLSX</button>
+          <button id="export-json" class="btn ghost" title="Експорт у JSON">JSON</button>
+          <button id="export-xlsx" class="btn ghost" title="Експорт у XLSX">XLSX</button>
         </div>
         <div style="display:flex;gap:6px">
-          <label class="ghost" style="cursor:pointer;padding:6px 8px;border-radius:8px;border:1px dashed rgba(255,255,255,0.04);text-align:center">
+          <label class="ghost" style="cursor:pointer;padding:6px 8px;border-radius:8px;border:1px dashed rgba(255,255,255,0.04);text-align:center;flex:1">
             Імпорт JSON
             <input id="import-file" type="file" accept=".json" style="display:none">
           </label>
-          <button id="clear-all" class="btn ghost" title="Очистити всі локальні дані">Очистити</button>
+          <button id="clear-all" class="btn ghost secondary" title="Очистити всі локальні дані">Очистити</button>
         </div>
-        <div class="small muted" style="margin-top:8px">Робітників: 4 • Орієнт. 20 кл./міс</div>
+        <div class="small muted" style="margin-top:8px;border-top:1px solid rgba(255,255,255,0.05);padding-top:8px">Робітників: 4 • 20 кл./міс</div>
       </div>
     </aside>
 
@@ -93,7 +112,7 @@
       <div class="header">
         <h1 id="page-title">Головна</h1>
         <div class="row">
-          <input id="search" placeholder="Пошук: клієнт, авто, телефон..." style="min-width:220px" />
+          <input id="search" placeholder="Пошук: клієнт, авто, телефон..." style="min-width:250px" />
           <div class="actions">
             <button id="btn-add-client" class="btn">Додати клієнта</button>
             <button id="btn-add-order" class="btn secondary">Новий наряд</button>
@@ -102,7 +121,6 @@
       </div>
 
       <div id="content">
-        <!-- Dashboard -->
         <div id="view-dashboard" class="view">
           <div class="stats">
             <div class="stat card">
@@ -119,19 +137,23 @@
             </div>
           </div>
 
+          <div id="low-stock-alert" class="card" style="display:none;margin-bottom:12px;border-left:4px solid var(--warning)">
+            <strong style="color:var(--warning)">⚠️ Увага! Низький запас товарів!</strong>
+            <div class="small muted" id="low-stock-list"></div>
+          </div>
+
           <div class="card">
             <div style="display:flex;justify-content:space-between;align-items:center">
               <strong>Останні наряди</strong>
               <div class="small muted" id="last-updated">—</div>
             </div>
             <table class="table" id="recent-orders">
-              <thead><tr><th>Наряд</th><th>Клієнт</th><th>Авто</th><th>Статус</th></tr></thead>
+              <thead><tr><th>№</th><th>Клієнт</th><th>Авто</th><th>Сума</th><th>Статус</th></tr></thead>
               <tbody></tbody>
             </table>
           </div>
         </div>
 
-        <!-- Clients -->
         <div id="view-clients" class="view" style="display:none">
           <div class="card">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
@@ -146,7 +168,6 @@
           </div>
         </div>
 
-        <!-- Orders -->
         <div id="view-orders" class="view" style="display:none">
           <div class="card">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
@@ -161,7 +182,6 @@
           </div>
         </div>
 
-        <!-- Services -->
         <div id="view-services" class="view" style="display:none">
           <div class="card">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
@@ -178,7 +198,6 @@
           </div>
         </div>
 
-        <!-- Stock -->
         <div id="view-stock" class="view" style="display:none">
           <div class="card">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
@@ -195,25 +214,24 @@
           </div>
         </div>
 
-        <!-- Payments -->
         <div id="view-payments" class="view" style="display:none">
           <div class="card">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
               <div><strong>Оплати</strong><div class="small muted">Статус оплат по нарядах</div></div>
+              <div class="small muted">Не оплачено: <span id="unpaid-count">0</span></div>
             </div>
 
             <table class="table" id="payments-table">
-              <thead><tr><th>Наряд</th><th>Клієнт</th><th>Сума</th><th>Оплачено</th></tr></thead>
+              <thead><tr><th>Наряд</th><th>Клієнт</th><th>Сума</th><th>Статус</th></tr></thead>
               <tbody></tbody>
             </table>
           </div>
         </div>
 
-        <!-- Settings -->
         <div id="view-settings" class="view" style="display:none">
           <div class="card">
             <strong>Налаштування</strong>
-            <div class="small muted" style="margin-top:8px">Локальне збереження: <span id="ls-key">sf_data_v1</span></div>
+            <div class="small muted" style="margin-top:8px">Локальне сховище: <span id="ls-key">sf_data_v1</span></div>
             <div style="margin-top:12px" class="flex-col">
               <button id="btn-reset-demo" class="btn secondary">Відновити демо-дані</button>
             </div>
@@ -224,12 +242,12 @@
     </main>
   </div>
 
-  <!-- Modals (Add client, Add service, Add stock, New order) -->
-  <div id="modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);align-items:center;justify-content:center;padding:20px;z-index:60">
-    <div id="modal-inner" style="max-width:900px;width:100%;background:var(--panel);padding:16px;border-radius:12px">
-      <!-- content injected by JS -->
-    </div>
+  <div id="modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);align-items:center;justify-content:center;padding:20px;z-index:1000">
+    <div id="modal-inner" class="modal-content">
+      </div>
   </div>
+
+  <div id="notification" class="notification"></div>
 
 <script>
 /* ---------- App data & localStorage ---------- */
@@ -238,37 +256,105 @@ let state = {
   clients: [],      // {id,name,phone,car,note,created}
   services: [],     // {id,name,price}
   stock: [],        // {id,name,qty,min,price}
-  orders: [],       // {id,clientId,car,items:[{type:'service'|'stock',id,qty,price}], total, status, created, paid}
+  orders: [],       // {id,clientId,car,items:[{type:'service'|'stock',id,qty,price, name, spended:bool}], total, status, created, paid, spended:bool}
 };
 
 /* ---------- Utilities ---------- */
 function uid(prefix='id'){ return prefix + '_' + Date.now().toString(36) + Math.floor(Math.random()*1000).toString(36); }
 function saveState(){ localStorage.setItem(LS_KEY, JSON.stringify(state)); renderAll(); }
-function loadState(){ try{ const r = localStorage.getItem(LS_KEY); if(r) state = JSON.parse(r); }catch(e){ console.error(e); } }
-function formatPrice(n){ return (Number(n)||0).toFixed(2) + ' ₴'; }
+function loadState(){ 
+  try{ 
+    const r = localStorage.getItem(LS_KEY); 
+    if(r) state = JSON.parse(r); 
+    if (state.clients.length === 0 && state.services.length === 0) {
+        seedDemo();
+    }
+    // Забезпечення наявності поля spended для старих нарядів
+    state.orders.forEach(o => {
+        if (o.spended === undefined) o.spended = false;
+        o.items.forEach(it => { if (it.spended === undefined) it.spended = false; });
+    });
+  }catch(e){ 
+    console.error("Помилка завантаження стану:", e);
+    seedDemo();
+  } 
+  renderAll();
+}
+function formatPrice(n){ return (Number(n)||0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, " ") + ' ₴'; }
 function findClient(id){ return state.clients.find(c=>c.id===id) || null; }
-function now(){ return new Date().toLocaleString(); }
+function findService(id){ return state.services.find(s=>s.id===id) || null; }
+function findStock(id){ return state.stock.find(s=>s.id===id) || null; }
+function findOrder(id){ return state.orders.find(o=>o.id===id) || null; }
+function escapeHtml(s){ if(!s) return ''; return String(s).replace(/[&<>"']/g, function(m){return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m]}); }
+
+function showNotification(message, isError = false){
+    const notification = document.getElementById('notification');
+    notification.textContent = message;
+    notification.className = 'notification ' + (isError ? 'error' : 'active');
+    setTimeout(() => {
+        notification.className = 'notification';
+    }, 3000);
+}
+
+const ORDER_STATUSES = ['новий', 'в роботі', 'очікує запчастин', 'готово', 'виконано', 'скасовано'];
 
 /* ---------- Initial demo data helper ---------- */
 function seedDemo(){
   state = {
     clients: [
-      {id:uid('c'), name:'Іван Петров', phone:'+380971234567', car:'VW Passat', note:'Регулярний клієнт', created:Date.now()},
-      {id:uid('c'), name:'Олег Коваль', phone:'+380631112233', car:'Mercedes Sprinter', note:'Доставка', created:Date.now()},
+      {id:uid('c'), name:'Іван Петров', phone:'+380971234567', car:'VW Passat (AA1234BB)', note:'Регулярний клієнт. Завжди бере 5W-40', created:Date.now()},
+      {id:uid('c'), name:'Олег Коваль', phone:'+380631112233', car:'Mercedes Sprinter (CA5678II)', note:'Доставка, термінові ремонти', created:Date.now() - 86400000},
+      {id:uid('c'), name:'Марія Сидоренко', phone:'+380509876543', car:'Mazda 3', note:'Тільки планові ТО', created:Date.now() - 2 * 86400000},
     ],
     services: [
       {id:uid('s'), name:'Заміна масла', price:800},
-      {id:uid('s'), name:'Ремонт ходової', price:2500},
+      {id:uid('s'), name:'Ремонт ходової (нормо-година)', price:900},
       {id:uid('s'), name:'Діагностика електрики', price:600},
     ],
     stock: [
-      {id:uid('p'), name:'Фільтр масляний', qty:10, min:2, price:120},
-      {id:uid('p'), name:'Масло 5W-40 (1л)', qty:25, min:5, price:350},
+      {id:uid('p'), name:'Фільтр масляний 124', qty:10, min:2, price:120},
+      {id:uid('p'), name:'Масло 5W-40 (1л)', qty:25, min:10, price:350},
+      {id:uid('p'), name:'Колодки гальмівні (комплект)', qty:1, min:3, price:950}, // Низький запас
     ],
-    orders: [
-      {id:uid('o'), clientId:null, car:'VW Passat', items:[], total:0, status:'готово', created:Date.now(), paid:true},
-    ],
+    orders: [],
   };
+  
+  const clientIvan = state.clients[0];
+  const serviceOil = state.services[0];
+  const stockFilter = state.stock[0];
+  const stockPads = state.stock[2];
+
+  state.orders = [
+    {
+        id: uid('o'), 
+        clientId: clientIvan.id, 
+        car:'VW Passat (AA1234BB)', 
+        items:[
+            {type:'service', id:serviceOil.id, qty:1, price:serviceOil.price, name:serviceOil.name, spended:false},
+            {type:'stock', id:stockFilter.id, qty:1, price:stockFilter.price, name:stockFilter.name, spended:true}
+        ], 
+        total: serviceOil.price + stockFilter.price, 
+        status:'виконано', 
+        created:Date.now() - 86400000, 
+        paid:true,
+        spended: true // Позначаємо, що запаси вже списані
+    },
+    {
+        id: uid('o'), 
+        clientId: state.clients[1].id, 
+        car:'Mercedes Sprinter', 
+        items:[
+            {type:'service', id:state.services[1].id, qty:4, price:state.services[1].price, name:state.services[1].name, spended:false},
+            {type:'stock', id:stockPads.id, qty:2, price:stockPads.price, name:stockPads.name, spended:false}
+        ], 
+        total: (4 * state.services[1].price) + (2 * stockPads.price), 
+        status:'в роботі', 
+        created:Date.now(), 
+        paid:false,
+        spended: false
+    },
+  ];
+
   saveState();
 }
 
@@ -290,12 +376,17 @@ function switchView(view){
     'payments':'Оплати',
     'settings':'Налаштування'
   }[view] || 'СТО Фіксики';
-  if(view === 'clients') renderClients();
-  if(view === 'orders') renderOrders();
-  if(view === 'services') renderServices();
-  if(view === 'stock') renderStock();
-  if(view === 'payments') renderPayments();
-  if(view === 'dashboard') renderDashboard();
+  
+  const renderMap = {
+    'clients': renderClients,
+    'orders': renderOrders,
+    'services': renderServices,
+    'stock': renderStock,
+    'payments': renderPayments,
+    'dashboard': renderDashboard
+  };
+  if(renderMap[view]) renderMap[view]();
+  searchInput.value = '';
 }
 
 menuBtns.forEach(b=> b.addEventListener('click', ()=> switchView(b.dataset.view)));
@@ -313,131 +404,27 @@ function renderAll(){
 /* Dashboard */
 function renderDashboard(){
   document.getElementById('stat-clients').textContent = state.clients.length;
-  const open = state.orders.filter(o=>o.status !== 'виконано').length;
+  const open = state.orders.filter(o=>o.status !== 'виконано' && o.status !== 'скасовано').length;
   document.getElementById('stat-open-orders').textContent = open;
   document.getElementById('stat-inwork').textContent = state.orders.filter(o=>o.status==='в роботі').length;
+  
+  // Alert for low stock
+  const lowStock = state.stock.filter(p => p.qty < p.min);
+  const lowStockAlert = document.getElementById('low-stock-alert');
+  if (lowStock.length > 0) {
+    lowStockAlert.style.display = 'block';
+    document.getElementById('low-stock-list').innerHTML = lowStock.map(p => `• ${escapeHtml(p.name)} (${p.qty} / ${p.min})`).join('<br>');
+  } else {
+    lowStockAlert.style.display = 'none';
+  }
+
   // recent orders
   const tbody = document.querySelector('#recent-orders tbody');
   tbody.innerHTML = '';
-  state.orders.slice(-6).reverse().forEach(o=>{
+  state.orders.slice().sort((a,b)=>b.created - a.created).slice(0, 6).forEach(o=>{
     const tr = document.createElement('tr');
     const client = findClient(o.clientId);
-    tr.innerHTML = `<td>${o.id}</td><td>${client?client.name:'—'}</td><td>${o.car||'—'}</td><td>${o.status}</td>`;
+    tr.innerHTML = `<td>${o.id.substring(0,6)}...</td><td>${client?escapeHtml(client.name):'—'}</td><td>${escapeHtml(o.car||'—')}</td><td>${formatPrice(o.total)}</td><td>${o.status}</td>`;
     tbody.appendChild(tr);
   });
-  document.getElementById('last-updated').textContent = state.orders.length ? new Date(state.orders[state.orders.length-1].created).toLocaleString() : '—';
-}
-
-/* Clients */
-function renderClients(filter=''){
-  const tbody = document.querySelector('#clients-table tbody');
-  tbody.innerHTML = '';
-  const q = (filter || searchInput.value || '').toLowerCase();
-  const list = state.clients.filter(c=> !q || (c.name+c.phone+c.car).toLowerCase().includes(q));
-  document.getElementById('clients-count').textContent = list.length;
-  list.forEach(c=>{
-    const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${escapeHtml(c.name)}</td><td class="small">${escapeHtml(c.phone)}</td><td class="small">${escapeHtml(c.car||'—')}</td><td class="small">${escapeHtml(c.note||'')}</td>
-      <td>
-        <div style="display:flex;gap:6px">
-          <button class="btn ghost" data-action="edit-client" data-id="${c.id}">Редагувати</button>
-          <button class="btn ghost" data-action="new-order" data-id="${c.id}">Наряд</button>
-          <button class="btn secondary" data-action="del-client" data-id="${c.id}">Видалити</button>
-        </div>
-      </td>`;
-    tbody.appendChild(tr);
-  });
-}
-
-/* Orders */
-function renderOrders(){
-  const tbody = document.querySelector('#orders-table tbody');
-  tbody.innerHTML = '';
-  state.orders.forEach((o, idx)=>{
-    const client = findClient(o.clientId);
-    const itemsHtml = (o.items || []).map(it=>{
-      if(it.type==='service'){ const s = state.services.find(ss=>ss.id===it.id); return `${s?escapeHtml(s.name):'послуга'} x${it.qty}`; }
-      else { const p = state.stock.find(ss=>ss.id===it.id); return `${p?escapeHtml(p.name):'запчастина'} x${it.qty}`; }
-    }).join(', ');
-    const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${idx+1}</td><td>${client?escapeHtml(client.name):'—'}</td><td>${escapeHtml(o.car||'—')}</td><td class="small">${itemsHtml}</td>
-      <td>${formatPrice(o.total)}</td><td>${o.status}${o.paid? ' • <span class="tag-paid">Оплачено</span>':' • <span class="tag-unpaid">Не оплачено</span>'}</td>
-      <td>
-        <div style="display:flex;gap:6px">
-          <button class="btn ghost" data-action="view-order" data-id="${o.id}">Відкрити</button>
-          <button class="btn secondary" data-action="delete-order" data-id="${o.id}">Видалити</button>
-        </div>
-      </td>`;
-    tbody.appendChild(tr);
-  });
-  document.getElementById('orders-count').textContent = state.orders.length;
-}
-
-/* Services */
-function renderServices(){
-  const tbody = document.querySelector('#services-table tbody');
-  tbody.innerHTML = '';
-  state.services.forEach(s=>{
-    const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${escapeHtml(s.name)}</td><td>${formatPrice(s.price)}</td><td>
-      <div style="display:flex;gap:6px">
-        <button class="btn ghost" data-action="edit-service" data-id="${s.id}">Ред.</button>
-        <button class="btn secondary" data-action="del-service" data-id="${s.id}">Видалити</button>
-      </div></td>`;
-    tbody.appendChild(tr);
-  });
-}
-
-/* Stock */
-function renderStock(){
-  const tbody = document.querySelector('#stock-table tbody');
-  tbody.innerHTML = '';
-  state.stock.forEach(p=>{
-    const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${escapeHtml(p.name)}</td><td>${p.qty}</td><td>${p.min}</td><td>${formatPrice(p.price)}</td>
-      <td>
-        <div style="display:flex;gap:6px">
-          <button class="btn ghost" data-action="edit-stock" data-id="${p.id}">Ред.</button>
-          <button class="btn secondary" data-action="consume-stock" data-id="${p.id}">Списати</button>
-        </div>
-      </td>`;
-    tbody.appendChild(tr);
-  });
-}
-
-/* Payments */
-function renderPayments(){
-  const tbody = document.querySelector('#payments-table tbody');
-  tbody.innerHTML = '';
-  state.orders.forEach(o=>{
-    const client = findClient(o.clientId);
-    const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${o.id}</td><td>${client?escapeHtml(client.name):'—'}</td><td>${formatPrice(o.total)}</td><td>${o.paid?'<span class="tag-paid">Так</span>':'<button class="btn ghost" data-action="pay" data-id="'+o.id+'">Позначити оплату</button>'}</td>`;
-    tbody.appendChild(tr);
-  });
-}
-
-/* ---------- Helpers ---------- */
-function escapeHtml(s){ if(!s) return ''; return String(s).replace(/[&<>"']/g, function(m){return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m]}); }
-
-/* ---------- UI actions: open modal helpers ---------- */
-const modal = document.getElementById('modal');
-const modalInner = document.getElementById('modal-inner');
-
-function openModal(html){
-  modalInner.innerHTML = html;
-  modal.style.display = 'flex';
-  // attach close button handler inside modal if exists
-  const closeBtn = modalInner.querySelector('[data-close]');
-  if(closeBtn) closeBtn.addEventListener('click', closeModal);
-}
-function closeModal(){ modal.style.display = 'none'; modalInner.innerHTML = ''; }
-
-/* Add client */
-document.getElementById('btn-add-client').addEventListener('click', ()=> {
-  openModal(`
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-      <strong>Додати клієнта</strong>
-      <button data-close class="btn secondary">Закрити</button>
-    </div>
-    <div class="form-
+  const lastOrderTime = state
