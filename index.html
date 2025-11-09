@@ -1,1252 +1,564 @@
 <!doctype html>
 <html lang="uk">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>СТО Фіксики — CRM (Повноцінна Версія)</title>
-
-  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
-
-  <style>
-    :root{
-      --bg:#06080a;
-      --panel:#0e1518;
-      --muted:#94a3b8;
-      --accent:#2f9cff;
-      --card:#0b1114;
-      --glass: rgba(255,255,255,0.03);
-      --success:#2ecc71;
-      --danger:#ff6b6b;
-      --warning:#f39c12;
-    }
-    *{box-sizing:border-box;font-family:Inter, Roboto, Arial, sans-serif}
-    body{margin:0;background:linear-gradient(180deg,var(--bg),#041018);color:#e6eef5;min-height:100vh}
-    .app{display:flex;min-height:100vh}
-    .sidebar{width:260px;background:linear-gradient(180deg,var(--panel),#081011);padding:18px;display:flex;flex-direction:column;gap:14px;position:sticky;top:0;height:100vh;flex-shrink:0}
-    .brand{font-weight:800;font-size:20px;text-align:center}
-    .menu button{display:flex;align-items:center;gap:12px;width:100%;padding:10px;border-radius:10px;border:0;background:transparent;color:var(--muted);cursor:pointer;transition:all 0.15s ease}
-    .menu button.active{background:linear-gradient(90deg,rgba(47,156,255,0.12),rgba(47,156,255,0.06));color:var(--accent);font-weight:600}
-    .menu button:hover{background:rgba(255,255,255,0.02);color:#fff}
-    .main{flex:1;padding:20px;overflow:auto}
-    .header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;gap:8px;flex-wrap:wrap}
-    h1{margin:0;font-size:24px;font-weight:700}
-    .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:12px}
-    .stat{background:var(--card);padding:12px;border-radius:12px;box-shadow:0 6px 18px rgba(0,0,0,0.45);text-align:center;border-left:4px solid var(--accent);transition:transform 0.2s ease}
-    .stat:hover{transform:translateY(-2px)}
-    .stat .label{color:var(--muted);font-size:13px}
-    .stat .value{font-size:24px;font-weight:800;margin-top:6px;color:var(--accent)}
-    .card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); padding:16px;border-radius:12px;box-shadow:0 4px 10px rgba(0,0,0,0.2)}
-    .row{display:flex;gap:12px;align-items:center}
-    .btn{padding:10px 14px;border-radius:10px;border:0;background:var(--accent);color:#061017;cursor:pointer;font-weight:600;transition:background 0.2s ease}
-    .btn:hover{background:#4fa8ff}
-    .btn.secondary{background:var(--panel);border:1px solid rgba(255,255,255,0.06);color:var(--muted);transition:background 0.2s ease, color 0.2s ease}
-    .btn.secondary:hover{background:rgba(255,255,255,0.05);color:#fff}
-    .btn.ghost{background:transparent;color:var(--muted);border-radius:8px;padding:8px 10px;border:1px solid transparent}
-    .btn.ghost:hover{border-color:rgba(255,255,255,0.1);color:#fff}
-    .btn.danger{background:var(--danger);color:#fff}
-    .btn:disabled{opacity:0.6;cursor:not-allowed}
-    .table{width:100%;border-collapse:collapse;margin-top:12px}
-    .table th, .table td{padding:12px;text-align:left;border-bottom:1px solid rgba(255,255,255,0.03);font-size:14px}
-    .table th{font-weight:700;color:#fff}
-    .table tbody tr:hover{background:rgba(255,255,255,0.015)}
-    input, textarea, select{background:var(--card);border:1px solid rgba(255,255,255,0.06);color:inherit;padding:10px 12px;border-radius:8px;outline:none;transition:border-color 0.2s ease}
-    input:focus, textarea:focus, select:focus{border-color:var(--accent)}
-    .form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
-    .actions{display:flex;gap:8px;align-items:center}
-    .floating{position:fixed;right:22px;bottom:22px;z-index:40}
-    .muted{color:var(--muted)}
-    .chip{background:rgba(255,255,255,0.02);padding:6px 8px;border-radius:999px;font-size:13px;color:var(--muted)}
-    .small{font-size:13px;color:var(--muted)}
-    .tag-paid{color:var(--success);font-weight:700}
-    .tag-unpaid{color:var(--danger);font-weight:700}
-    .tag-low-stock{background:rgba(243, 156, 18, 0.2);color:var(--warning);padding:3px 8px;border-radius:4px;font-weight:600}
-    .flex-col{display:flex;flex-direction:column;gap:10px}
-    .modal-content{max-width:1000px;width:100%;background:var(--panel);padding:20px;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,0.5);overflow-y:auto;max-height:90vh}
-    .notification{position:fixed;bottom:20px;right:20px;background:var(--success);color:#fff;padding:10px 15px;border-radius:8px;z-index:2000;opacity:0;transition:opacity 0.3s ease}
-    .notification.error{background:var(--danger)}
-    .notification.active{opacity:1}
-    .order-item-row input, .order-item-row select { height: 40px; padding: 5px 8px; }
-    
-    @media (max-width:1024px) {
-        .modal-content { max-width: 95vw; }
-    }
-    @media (max-width:900px){ .sidebar{display:none} .main{padding:12px} .header{flex-direction:column;align-items:stretch} .row{flex-wrap:wrap} }
-  </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>СТО Фіксики — CRM PWA v3.1</title>
+<meta name="theme-color" content="#0e1518">
+<link rel="manifest" href="manifest.json">
+<style>
+:root{--bg:#06080a;--panel:#0e1518;--muted:#94a3b8;--accent:#2f9cff;--card:#0b1114;--success:#2ecc71;--danger:#ff6b6b}
+*{box-sizing:border-box;font-family:Inter, Roboto, Arial, sans-serif}
+html,body{height:100%}
+body{margin:0;background:linear-gradient(180deg,var(--bg),#041018);color:#e6eef5;min-height:100vh}
+.app{display:flex;min-height:100vh}
+.sidebar{width:260px;background:linear-gradient(180deg,var(--panel),#081011);padding:18px;display:flex;flex-direction:column;gap:14px;flex-shrink:0}
+.brand{font-weight:800;font-size:20px;text-align:center}
+.menu button{display:flex;align-items:center;gap:12px;width:100%;padding:10px;border-radius:10px;border:0;background:transparent;color:var(--muted);cursor:pointer}
+.menu button.active{background:linear-gradient(90deg,rgba(47,156,255,0.12),rgba(47,156,255,0.06));color:var(--accent);font-weight:600}
+.main{flex:1;padding:16px;overflow:auto;height:100vh}
+.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:8px;flex-wrap:wrap}
+h1{margin:0;font-size:20px;font-weight:700}
+.card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); padding:14px;border-radius:12px;box-shadow:0 4px 10px rgba(0,0,0,0.2)}
+.table{width:100%;border-collapse:collapse;margin-top:12px}
+.table th, .table td{padding:10px;text-align:left;border-bottom:1px solid rgba(255,255,255,0.03);font-size:14px}
+input,textarea,select{background:var(--card);border:1px solid rgba(255,255,255,0.06);color:inherit;padding:8px;border-radius:8px}
+.btn{padding:8px 12px;border-radius:10px;border:0;background:var(--accent);color:#061017;cursor:pointer;font-weight:600}
+.btn.secondary{background:var(--panel);border:1px solid rgba(255,255,255,0.06);color:var(--muted)}
+.small{font-size:13px;color:var(--muted)}
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);align-items:center;justify-content:center;padding:20px;z-index:1200}
+.modal.active{display:flex}
+.modal-content{max-width:1000px;width:100%;background:var(--panel);padding:18px;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,0.6);overflow:auto;max-height:90vh}
+.notification{position:fixed;bottom:20px;right:20px;background:var(--success);color:#fff;padding:10px 15px;border-radius:8px;z-index:2000;opacity:0;transition:opacity .3s}
+.notification.active{opacity:1}
+.user-badge{background:rgba(255,255,255,0.03);padding:6px 8px;border-radius:8px;font-weight:700}
+.hidden{display:none}
+.assign-list{max-height:160px;overflow:auto;padding:8px;background:rgba(255,255,255,0.02);border-radius:8px}
+</style>
 </head>
 <body>
-  <div class="app">
-    <aside class="sidebar" role="navigation" aria-label="Меню">
-      <div style="flex:1">
-        <div class="brand">СТО Фіксики</div>
-        <div class="small muted" style="text-align:center;margin-top:6px">CRM • Повноцінна v1.0</div>
+<div id="app" class="app" style="display:none">
+  <aside class="sidebar">
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <div class="brand">СТО Фіксики</div>
+      <div class="small">CRM PWA • v3.1</div>
+      <div id="user-info" style="margin-top:8px"></div>
+    </div>
+    <nav class="menu" style="margin-top:12px">
+      <button class="active" data-view="dashboard">🏠 Головна</button>
+      <button data-view="clients">👥 Клієнти</button>
+      <button data-view="orders">📋 Наряди</button>
+      <button data-view="stock">📦 Склад</button>
+      <button data-view="services">⚙️ Послуги</button>
+      <button data-view="users" id="users-tab">👨‍🔧 Керування майстрами</button>
+      <button data-view="settings">⚙️ Налаштування</button>
+    </nav>
 
-        <nav class="menu" style="margin-top:20px">
-          <button class="active" data-view="dashboard">🏠 Головна</button>
-          <button data-view="clients">👥 Клієнти</button>
-          <button data-view="orders">📋 Наряди</button>
-          <button data-view="services">🔧 Послуги</button>
-          <button data-view="stock">📦 Склад</button>
-          <button data-view="payments">💳 Оплати</button>
-          <button data-view="settings">⚙️ Налаштування</button>
-        </nav>
+    <div style="margin-top:auto;display:flex;flex-direction:column;gap:8px">
+      <button id="export-json" class="btn secondary">Експорт JSON</button>
+      <button id="export-xlsx" class="btn secondary">Експорт XLSX</button>
+      <label style="display:block;text-align:center;border:1px dashed rgba(255,255,255,0.04);padding:8px;border-radius:8px;cursor:pointer" title="Імпорт JSON">
+        Імпорт JSON<input id="import-file" type="file" accept=".json" style="display:none">
+      </label>
+      <button id="logout" class="btn ghost secondary">Вийти</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="header">
+      <h1 id="page-title">Головна</h1>
+      <div style="display:flex;gap:8px;align-items:center">
+        <input id="search" placeholder="Пошук..." style="min-width:220px">
+        <div id="admin-actions" class="hidden"><button id="btn-add-client" class="btn">Додати клієнта</button></div>
+        <div id="master-actions" class="hidden"><button id="btn-add-order-master" class="btn">Новий наряд</button></div>
       </div>
+    </div>
 
-      <div style="display:flex;flex-direction:column;gap:10px">
-        <div class="small muted">Дані збережено локально</div>
-        <div style="display:flex;gap:6px">
-          <button id="export-json" class="btn ghost" title="Експорт у JSON">JSON</button>
-          <button id="export-xlsx" class="btn ghost" title="Експорт у XLSX">XLSX</button>
-        </div>
-        <div style="display:flex;gap:6px">
-          <label class="ghost" style="cursor:pointer;padding:6px 8px;border-radius:8px;border:1px dashed rgba(255,255,255,0.04);text-align:center;flex:1">
-            Імпорт JSON
-            <input id="import-file" type="file" accept=".json" style="display:none">
-          </label>
-          <button id="clear-all" class="btn ghost secondary" title="Очистити всі локальні дані">Очистити</button>
-        </div>
-        <div class="small muted" style="margin-top:8px;border-top:1px solid rgba(255,255,255,0.05);padding-top:8px">Робітників: 4 • 20 кл./міс</div>
-      </div>
-    </aside>
-
-    <main class="main">
-      <div class="header">
-        <h1 id="page-title">Головна</h1>
-        <div class="row">
-          <input id="search" placeholder="Пошук: клієнт, авто, телефон..." style="min-width:250px" />
-          <div class="actions">
-            <button id="btn-add-client" class="btn">Додати клієнта</button>
-            <button id="btn-add-order" class="btn secondary">Новий наряд</button>
-          </div>
+    <div id="view-dashboard" class="view">
+      <div class="card"><strong>Вітання</strong><div class="small">Ви увійшли як <span id="role-display"></span></div></div>
+      <div class="card">
+        <div style="display:flex;gap:12px">
+          <div><strong>Клієнтів</strong><div id="stat-clients">0</div></div>
+          <div><strong>Нарядів</strong><div id="stat-orders">0</div></div>
+          <div><strong>Доход (30д)</strong><div id="stat-rev">0 ₴</div></div>
         </div>
       </div>
+      <div class="card"><strong>Останні зміни</strong><div id="recent-changes" class="small"></div></div>
+    </div>
 
-      <div id="content">
-        <div id="view-dashboard" class="view">
-          <div class="stats">
-            <div class="stat card">
-              <div class="label">Авто в роботі</div>
-              <div class="value" id="stat-inwork">0</div>
-            </div>
-            <div class="stat card">
-              <div class="label">Клієнтів у базі</div>
-              <div class="value" id="stat-clients">0</div>
-            </div>
-            <div class="stat card">
-              <div class="label">Невиконані наряди</div>
-              <div class="value" id="stat-open-orders">0</div>
-            </div>
-          </div>
-
-          <div id="low-stock-alert" class="card" style="display:none;margin-bottom:12px;border-left:4px solid var(--warning)">
-            <strong style="color:var(--warning)">⚠️ Увага! Низький запас товарів!</strong>
-            <div class="small muted" id="low-stock-list"></div>
-          </div>
-
-          <div class="card">
-            <div style="display:flex;justify-content:space-between;align-items:center">
-              <strong>Останні наряди</strong>
-              <div class="small muted" id="last-updated">—</div>
-            </div>
-            <table class="table" id="recent-orders">
-              <thead><tr><th>№</th><th>Клієнт</th><th>Авто</th><th>Сума</th><th>Статус</th></tr></thead>
-              <tbody></tbody>
-            </table>
-          </div>
-        </div>
-
-        <div id="view-clients" class="view" style="display:none">
-          <div class="card">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-              <div><strong>Клієнти</strong><div class="small muted">Список клієнтів та авто</div></div>
-              <div class="small muted">Знайдено: <span id="clients-count">0</span></div>
-            </div>
-
-            <table class="table" id="clients-table">
-              <thead><tr><th>Ім'я</th><th>Телефон</th><th>Авто</th><th>Нотатки</th><th>Дії</th></tr></thead>
-              <tbody></tbody>
-            </table>
-          </div>
-        </div>
-
-        <div id="view-orders" class="view" style="display:none">
-          <div class="card">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-              <div><strong>Наряди</strong><div class="small muted">Створення та управління нарядами</div></div>
-              <div class="small muted">Всього: <span id="orders-count">0</span></div>
-            </div>
-
-            <table class="table" id="orders-table">
-              <thead><tr><th>№</th><th>Клієнт</th><th>Авто</th><th>Послуги/деталі</th><th>Сума</th><th>Статус</th><th>Дії</th></tr></thead>
-              <tbody></tbody>
-            </table>
-          </div>
-        </div>
-
-        <div id="view-services" class="view" style="display:none">
-          <div class="card">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-              <div><strong>Послуги</strong><div class="small muted">Словник послуг і ціни</div></div>
-              <div class="actions">
-                <button id="btn-add-service" class="btn">Додати послугу</button>
-              </div>
-            </div>
-
-            <table class="table" id="services-table">
-              <thead><tr><th>Назва</th><th>Ціна</th><th>Дії</th></tr></thead>
-              <tbody></tbody>
-            </table>
-          </div>
-        </div>
-
-        <div id="view-stock" class="view" style="display:none">
-          <div class="card">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-              <div><strong>Склад</strong><div class="small muted">Запчастини та розхідники</div></div>
-              <div class="actions">
-                <button id="btn-add-stock" class="btn">Додати товар</button>
-              </div>
-            </div>
-
-            <table class="table" id="stock-table">
-              <thead><tr><th>Назва</th><th>Кіл-ть</th><th>Мінімум</th><th>Ціна</th><th>Дії</th></tr></thead>
-              <tbody></tbody>
-            </table>
-          </div>
-        </div>
-
-        <div id="view-payments" class="view" style="display:none">
-          <div class="card">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-              <div><strong>Оплати</strong><div class="small muted">Статус оплат по нарядах</div></div>
-              <div class="small muted">Не оплачено: <span id="unpaid-count">0</span></div>
-            </div>
-
-            <table class="table" id="payments-table">
-              <thead><tr><th>Наряд</th><th>Клієнт</th><th>Сума</th><th>Статус</th></tr></thead>
-              <tbody></tbody>
-            </table>
-          </div>
-        </div>
-
-        <div id="view-settings" class="view" style="display:none">
-          <div class="card">
-            <strong>Налаштування</strong>
-            <div class="small muted" style="margin-top:8px">Локальне сховище: <span id="ls-key">sf_data_v1</span></div>
-            <div style="margin-top:12px" class="flex-col">
-              <button id="btn-reset-demo" class="btn secondary">Відновити демо-дані</button>
-            </div>
-          </div>
-        </div>
-
+    <div id="view-clients" class="view hidden">
+      <div class="card"><strong>Клієнти</strong></div>
+      <div class="card">
+        <table class="table" id="clients-table">
+          <thead><tr><th>Ім'я</th><th>Телефон</th><th>Авто</th><th>Майстер</th><th>Дії</th></tr></thead>
+          <tbody></tbody>
+        </table>
       </div>
-    </main>
+    </div>
+
+    <div id="view-orders" class="view hidden">
+      <div class="card"><strong>Наряди</strong></div>
+      <div class="card">
+        <table class="table" id="orders-table"><thead><tr><th>№</th><th>Клієнт</th><th>Тип</th><th>Майстер</th><th>Сума</th><th>Статус</th><th>Дії</th></tr></thead><tbody></tbody></table>
+      </div>
+    </div>
+
+    <div id="view-stock" class="view hidden">
+      <div class="card"><strong>Склад</strong></div>
+      <div class="card">
+        <table class="table" id="stock-table"><thead><tr><th>Назва</th><th>К-ть</th><th>Мін</th><th>Дії</th></tr></thead><tbody></tbody></table>
+      </div>
+    </div>
+
+    <div id="view-services" class="view hidden">
+      <div class="card"><strong>Послуги</strong></div>
+      <div class="card">
+        <table class="table" id="services-table"><thead><tr><th>Назва</th><th>Ціна</th><th>Дії</th></tr></thead><tbody></tbody></table>
+      </div>
+    </div>
+
+    <div id="view-users" class="view hidden">
+      <div class="card"><strong>Майстри та доступи</strong></div>
+      <div class="card">
+        <div style="display:flex;gap:8px;align-items:center">
+          <input id="new-user-name" placeholder="Ім'я майстра">
+          <input id="new-user-pin" placeholder="PIN (4 цифри)">
+          <button id="add-user" class="btn">Додати</button>
+        </div>
+        <div style="margin-top:12px"><strong>Список майстрів</strong>
+          <div id="users-list" class="assign-list"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="view-settings" class="view hidden">
+      <div class="card"><strong>Налаштування</strong></div>
+      <div class="card"><button id="btn-reset" class="btn secondary">Відновити демо</button></div>
+    </div>
+
+  </main>
+</div>
+
+<!-- Login modal -->
+<div id="login-modal" class="modal active"><div class="modal-content" style="max-width:420px;text-align:center">
+  <h2>Вхід у CRM — СТО Фіксики</h2>
+  <div style="display:flex;flex-direction:column;gap:8px;margin-top:10px">
+    <select id="login-user"></select>
+    <input id="login-pin" type="password" placeholder="PIN">
+    <div style="display:flex;gap:8px;justify-content:center">
+      <button id="login-btn" class="btn">Увійти</button>
+      <button id="login-demo" class="btn secondary">Демо (адмін)</button>
+    </div>
   </div>
+</div></div>
 
-  <div id="modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);align-items:center;justify-content:center;padding:20px;z-index:1000">
-    <div id="modal-inner" class="modal-content">
-      </div>
-  </div>
-
-  <div id="notification" class="notification"></div>
+<!-- Modal shell -->
+<div id="modal" class="modal"><div id="modal-inner" class="modal-content"></div></div>
+<div id="toast" class="notification"></div>
 
 <script>
-/* ---------- App data & localStorage ---------- */
-const LS_KEY = 'sf_data_v1';
-let state = {
-  clients: [],      // {id,name,phone,car,note,created}
-  services: [],     // {id,name,price}
-  stock: [],        // {id,name,qty,min,price}
-  orders: [],       // {id,clientId,car,items:[{type:'service'|'stock',id,qty,price, name, spended:bool}], total, status, created, paid, spended:bool}
-};
-
-/* ---------- Utilities ---------- */
-function uid(prefix='id'){ return prefix + '_' + Date.now().toString(36) + Math.floor(Math.random()*1000).toString(36); }
-function saveState(){ localStorage.setItem(LS_KEY, JSON.stringify(state)); renderAll(); }
-function loadState(){ 
-  try{ 
-    const r = localStorage.getItem(LS_KEY); 
-    if(r) state = JSON.parse(r); 
-    if (state.clients.length === 0 && state.services.length === 0) {
-        seedDemo();
-    }
-    // Забезпечення наявності поля spended для старих нарядів
-    state.orders.forEach(o => {
-        if (o.spended === undefined) o.spended = false;
-        o.items.forEach(it => { if (it.spended === undefined) it.spended = false; });
-    });
-  }catch(e){ 
-    console.error("Помилка завантаження стану:", e);
-    seedDemo();
-  } 
-  renderAll();
-}
-function formatPrice(n){ return (Number(n)||0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, " ") + ' ₴'; }
-function findClient(id){ return state.clients.find(c=>c.id===id) || null; }
-function findService(id){ return state.services.find(s=>s.id===id) || null; }
-function findStock(id){ return state.stock.find(s=>s.id===id) || null; }
-function findOrder(id){ return state.orders.find(o=>o.id===id) || null; }
-function escapeHtml(s){ if(!s) return ''; return String(s).replace(/[&<>"']/g, function(m){return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m]}); }
-
-function showNotification(message, isError = false){
-    const notification = document.getElementById('notification');
-    notification.textContent = message;
-    notification.className = 'notification ' + (isError ? 'error' : 'active');
-    setTimeout(() => {
-        notification.className = 'notification';
-    }, 3000);
+/* PWA service worker registration */
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('sw.js').catch(e=>console.warn('SW err',e));
 }
 
-const ORDER_STATUSES = ['новий', 'в роботі', 'очікує запчастин', 'готово', 'виконано', 'скасовано'];
+/* Data model */
+const LS = 'sf_data_v3_pwa';
+let state = { users:[], clients:[], services:[], stock:[], orders:[], logs:[] };
 
-/* ---------- Initial demo data helper ---------- */
+/* Utils */
+function uid(prefix='id'){ return prefix + '_' + Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+function save(){ localStorage.setItem(LS, JSON.stringify(state)); renderAll(); }
+function load(){ try{ const r = localStorage.getItem(LS); if(r) state = JSON.parse(r); }catch(e){ console.error(e); } if(!state.users) seedDemo(); }
+function show(msg, err=false){ const t = document.getElementById('toast'); t.textContent = msg; t.style.background = err? '#ff6b6b':'#2ecc71'; t.className = 'notification active'; setTimeout(()=> t.className='notification', 3000); }
+function hashPin(pin){ return btoa(String(pin)); } // simple encoding (not secure, but sufficient locally)
+function currentUser(){ return window._CURRENT_USER || null; }
+function setCurrentUser(u){ window._CURRENT_USER = u; updateUserUI(); }
+
+/* Seed */
 function seedDemo(){
   state = {
-    clients: [
-      {id:uid('c'), name:'Іван Петров', phone:'+380971234567', car:'VW Passat (AA1234BB)', note:'Регулярний клієнт. Завжди бере 5W-40', created:Date.now()},
-      {id:uid('c'), name:'Олег Коваль', phone:'+380631112233', car:'Mercedes Sprinter (CA5678II)', note:'Доставка, термінові ремонти', created:Date.now() - 86400000},
-      {id:uid('c'), name:'Марія Сидоренко', phone:'+380509876543', car:'Mazda 3', note:'Тільки планові ТО', created:Date.now() - 2 * 86400000},
+    users:[
+      {id:uid('u'), name:'Адміністратор', role:'admin', pin:hashPin('1234')},
+      {id:uid('u'), name:'Майстер 1', role:'master', pin:hashPin('1111'), assignedClientIds:[]},
+      {id:uid('u'), name:'Майстер 2', role:'master', pin:hashPin('2222'), assignedClientIds:[]}
     ],
-    services: [
+    clients:[
+      {id:uid('c'), name:'Іван Петров', phone:'+380971234567', car:'VW Passat', masterId:null},
+      {id:uid('c'), name:'Олег Коваль', phone:'+380631112233', car:'Mercedes Sprinter', masterId:null}
+    ],
+    services:[
       {id:uid('s'), name:'Заміна масла', price:800},
-      {id:uid('s'), name:'Ремонт ходової (нормо-година)', price:900},
-      {id:uid('s'), name:'Діагностика електрики', price:600},
+      {id:uid('s'), name:'Ремонт ходової', price:900}
     ],
-    stock: [
-      {id:uid('p'), name:'Фільтр масляний 124', qty:10, min:2, price:120},
-      {id:uid('p'), name:'Масло 5W-40 (1л)', qty:25, min:10, price:350},
-      {id:uid('p'), name:'Колодки гальмівні (комплект)', qty:1, min:3, price:950}, // Низький запас
+    stock:[
+      {id:uid('p'), name:'Масло 5W-40 (1л)', qty:25, min:5, price:350},
+      {id:uid('p'), name:'Колодки (комплект)', qty:5, min:2, price:950}
     ],
-    orders: [],
+    orders:[],
+    logs:[]
   };
-  
-  const clientIvan = state.clients[0];
-  const serviceOil = state.services[0];
-  const stockFilter = state.stock[0];
-  const stockPads = state.stock[2];
-
-  state.orders = [
-    {
-        id: uid('o'), 
-        clientId: clientIvan.id, 
-        car:'VW Passat (AA1234BB)', 
-        items:[
-            {type:'service', id:serviceOil.id, qty:1, price:serviceOil.price, name:serviceOil.name, spended:false},
-            {type:'stock', id:stockFilter.id, qty:1, price:stockFilter.price, name:stockFilter.name, spended:true}
-        ], 
-        total: serviceOil.price + stockFilter.price, 
-        status:'виконано', 
-        created:Date.now() - 86400000, 
-        paid:true,
-        spended: true // Позначаємо, що запаси вже списані
-    },
-    {
-        id: uid('o'), 
-        clientId: state.clients[1].id, 
-        car:'Mercedes Sprinter', 
-        items:[
-            {type:'service', id:state.services[1].id, qty:4, price:state.services[1].price, name:state.services[1].name, spended:false},
-            {type:'stock', id:stockPads.id, qty:2, price:stockPads.price, name:stockPads.name, spended:false}
-        ], 
-        total: (4 * state.services[1].price) + (2 * stockPads.price), 
-        status:'в роботі', 
-        created:Date.now(), 
-        paid:false,
-        spended: false
-    },
-  ];
-
-  saveState();
+  save();
 }
 
-/* ---------- Rendering ---------- */
-const menuBtns = document.querySelectorAll('.menu button');
-const views = document.querySelectorAll('.view');
-const pageTitle = document.getElementById('page-title');
-const searchInput = document.getElementById('search');
-
-function switchView(view){
-  menuBtns.forEach(b=>b.classList.toggle('active', b.dataset.view===view));
-  views.forEach(v=>v.style.display = v.id === 'view-' + view ? 'block' : 'none');
-  pageTitle.textContent = {
-    'dashboard':'Головна',
-    'clients':'Клієнти',
-    'orders':'Наряди',
-    'services':'Послуги',
-    'stock':'Склад',
-    'payments':'Оплати',
-    'settings':'Налаштування'
-  }[view] || 'СТО Фіксики';
-  
-  const renderMap = {
-    'clients': renderClients,
-    'orders': renderOrders,
-    'services': renderServices,
-    'stock': renderStock,
-    'payments': renderPayments,
-    'dashboard': renderDashboard
-  };
-  if(renderMap[view]) renderMap[view]();
-  searchInput.value = '';
-}
-
-menuBtns.forEach(b=> b.addEventListener('click', ()=> switchView(b.dataset.view)));
-
-/* Render all */
+/* Rendering */
 function renderAll(){
-  renderDashboard();
+  renderUserList();
   renderClients();
   renderOrders();
-  renderServices();
   renderStock();
-  renderPayments();
+  renderServices();
+  updateDashboard();
+  renderUsersTab();
 }
-
-/* Dashboard */
-function renderDashboard(){
-  document.getElementById('stat-clients').textContent = state.clients.length;
-  const open = state.orders.filter(o=>o.status !== 'виконано' && o.status !== 'скасовано').length;
-  document.getElementById('stat-open-orders').textContent = open;
-  document.getElementById('stat-inwork').textContent = state.orders.filter(o=>o.status==='в роботі').length;
-  
-  // Alert for low stock
-  const lowStock = state.stock.filter(p => p.qty < p.min);
-  const lowStockAlert = document.getElementById('low-stock-alert');
-  if (lowStock.length > 0) {
-    lowStockAlert.style.display = 'block';
-    document.getElementById('low-stock-list').innerHTML = lowStock.map(p => `• ${escapeHtml(p.name)} (${p.qty} / ${p.min})`).join('<br>');
+function renderUserList(){
+  const sel = document.getElementById('login-user');
+  sel.innerHTML = state.users.map(u=>`<option value="${u.id}">${u.name} (${u.role})</option>`).join('');
+}
+function updateUserUI(){
+  const ui = document.getElementById('user-info');
+  const user = currentUser();
+  if(user){
+    ui.innerHTML = `<div class="user-badge">${user.name} • ${user.role}</div>`;
+    document.getElementById('admin-actions').classList.toggle('hidden', user.role !== 'admin');
+    document.getElementById('master-actions').classList.toggle('hidden', user.role !== 'master');
+    document.getElementById('users-tab').style.display = user.role === 'admin' ? 'block' : 'none';
   } else {
-    lowStockAlert.style.display = 'none';
+    ui.innerHTML = '';
   }
-
-  // recent orders
-  const tbody = document.querySelector('#recent-orders tbody');
-  tbody.innerHTML = '';
-  state.orders.slice().sort((a,b)=>b.created - a.created).slice(0, 6).forEach(o=>{
-    const tr = document.createElement('tr');
-    const client = findClient(o.clientId);
-    tr.innerHTML = `<td>${o.id.substring(0,6)}...</td><td>${client?escapeHtml(client.name):'—'}</td><td>${escapeHtml(o.car||'—')}</td><td>${formatPrice(o.total)}</td><td>${o.status}</td>`;
-    tbody.appendChild(tr);
-  });
-  const lastOrderTime = state.orders.length ? Math.max(...state.orders.map(o => o.created)) : null;
-  document.getElementById('last-updated').textContent = lastOrderTime ? new Date(lastOrderTime).toLocaleString() : '—';
 }
-
-/* Clients */
-function renderClients(filter=''){
+function renderClients(){
   const tbody = document.querySelector('#clients-table tbody');
   tbody.innerHTML = '';
-  const q = (filter || searchInput.value || '').toLowerCase();
-  const list = state.clients.filter(c=> !q || (c.name+c.phone+c.car).toLowerCase().includes(q));
-  document.getElementById('clients-count').textContent = list.length;
+  const user = currentUser();
+  const list = state.clients.filter(c => {
+    if(!user) return false;
+    if(user.role === 'admin') return true;
+    // master sees only assigned clients
+    return user.assignedClientIds && user.assignedClientIds.includes(c.id);
+  });
   list.forEach(c=>{
+    const master = state.users.find(u=>u.id===c.masterId);
     const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${escapeHtml(c.name)}</td><td class="small">${escapeHtml(c.phone)}</td><td class="small">${escapeHtml(c.car||'—')}</td><td class="small">${escapeHtml(c.note||'')}</td>
+    tr.innerHTML = `<td>${c.name}</td><td>${c.phone}</td><td>${c.car}</td><td>${master?master.name:'—'}</td>
       <td>
-        <div style="display:flex;gap:6px">
-          <button class="btn ghost" data-action="edit-client" data-id="${c.id}">Редагувати</button>
-          <button class="btn ghost" data-action="new-order" data-client-id="${c.id}">Наряд</button>
-          <button class="btn secondary" data-action="del-client" data-id="${c.id}">Видалити</button>
-        </div>
+        ${currentUser() && currentUser().role==='admin' ? `<button class="btn" data-action="assign" data-id="${c.id}">Призначити</button>` : ''}
+        <button class="btn" data-action="new-order" data-id="${c.id}">Наряд</button>
       </td>`;
     tbody.appendChild(tr);
   });
 }
-
-/* Orders */
-function renderOrders(filter=''){
-  const tbody = document.querySelector('#orders-table tbody');
-  tbody.innerHTML = '';
-  const q = (filter || searchInput.value || '').toLowerCase();
-  const list = state.orders.slice().sort((a,b)=>b.created - a.created).filter(o=> {
-    const client = findClient(o.clientId);
-    const clientInfo = client ? client.name + client.phone : '';
-    const orderInfo = o.car + o.status;
-    return !q || (clientInfo + orderInfo + o.id).toLowerCase().includes(q);
+function renderOrders(){
+  const tbody = document.querySelector('#orders-table tbody'); tbody.innerHTML = '';
+  const user = currentUser();
+  const list = state.orders.filter(o => {
+    if(!user) return false;
+    if(user.role==='admin') return true;
+    return o.masterId === user.id;
   });
-  
-  list.forEach((o)=>{ 
-    const client = findClient(o.clientId);
-    const itemsHtml = (o.items || []).map(it=>{
-      const name = it.name || (it.type === 'service' ? findService(it.id)?.name : findStock(it.id)?.name) || (it.type === 'service' ? 'послуга' : 'запчастина');
-      return `${name} x${it.qty}`;
-    }).join(', ');
-
+  list.forEach(o=>{
+    const client = state.clients.find(c=>c.id===o.clientId);
+    const master = state.users.find(u=>u.id===o.masterId);
     const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${o.id.substring(0,6)}...</td><td>${client?escapeHtml(client.name):'—'}</td><td>${escapeHtml(o.car||'—')}</td><td class="small">${itemsHtml || '—'}</td>
-      <td>${formatPrice(o.total)}</td><td>${o.status}${o.paid? ' • <span class="tag-paid">Оплачено</span>':' • <span class="tag-unpaid">Не оплачено</span>'}</td>
-      <td>
-        <div style="display:flex;gap:6px">
-          <button class="btn ghost" data-action="view-order" data-id="${o.id}">Відкрити</button>
-          <button class="btn secondary" data-action="delete-order" data-id="${o.id}">Видалити</button>
-        </div>
-      </td>`;
-    tbody.appendChild(tr);
-  });
-  document.getElementById('orders-count').textContent = state.orders.length;
-}
-
-/* Services */
-function renderServices(){
-  const tbody = document.querySelector('#services-table tbody');
-  tbody.innerHTML = '';
-  state.services.forEach(s=>{
-    const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${escapeHtml(s.name)}</td><td>${formatPrice(s.price)}</td><td>
-      <div style="display:flex;gap:6px">
-        <button class="btn ghost" data-action="edit-service" data-id="${s.id}">Ред.</button>
-        <button class="btn secondary" data-action="del-service" data-id="${s.id}">Видалити</button>
-      </div></td>`;
+    tr.innerHTML = `<td>${o.id.substring(0,6)}</td><td>${client?client.name:'—'}</td><td>${o.type}</td><td>${master?master.name:'—'}</td><td>${(o.total||0).toFixed(2)} ₴</td><td>${o.status}</td>
+      <td>${currentUser() && currentUser().role==='master' ? `<button class="btn" data-action="take-stock" data-id="${o.id}">Взяти зі складу</button>` : ''}<button class="btn" data-action="view-order" data-id="${o.id}">Відкрити</button></td>`;
     tbody.appendChild(tr);
   });
 }
-
-/* Stock */
 function renderStock(){
-  const tbody = document.querySelector('#stock-table tbody');
-  tbody.innerHTML = '';
+  const tbody = document.querySelector('#stock-table tbody'); tbody.innerHTML='';
   state.stock.forEach(p=>{
-    const isLow = p.qty < p.min;
-    const rowClass = isLow ? 'style="background:rgba(243, 156, 18, 0.1);"' : '';
-    const tag = isLow ? '<span class="tag-low-stock">Низький</span>' : '';
-    const tr = document.createElement('tr');
-    tr.innerHTML = `<td ${rowClass}>${escapeHtml(p.name)}</td><td>${p.qty} ${tag}</td><td>${p.min}</td><td>${formatPrice(p.price)}</td>
-      <td>
-        <div style="display:flex;gap:6px">
-          <button class="btn ghost" data-action="edit-stock" data-id="${p.id}">Ред.</button>
-          <button class="btn secondary" data-action="consume-stock" data-id="${p.id}">Списати</button>
-        </div>
-      </td>`;
+    const tr=document.createElement('tr');
+    tr.innerHTML = `<td>${p.name}</td><td>${p.qty}</td><td>${p.min}</td><td>${currentUser() && currentUser().role==='admin'?`<button class="btn" data-action="edit-stock" data-id="${p.id}">Ред.</button>`:''}</td>`;
     tbody.appendChild(tr);
   });
 }
+function renderServices(){ const tbody=document.querySelector('#services-table tbody'); tbody.innerHTML=''; state.services.forEach(s=>{ const tr=document.createElement('tr'); tr.innerHTML=`<td>${s.name}</td><td>${s.price} ₴</td><td>${currentUser() && currentUser().role==='admin'?`<button class="btn" data-action="edit-service" data-id="${s.id}">Ред.</button>`:''}</td>`; tbody.appendChild(tr); }); }
+function updateDashboard(){
+  document.getElementById('stat-clients').textContent = state.clients.length;
+  document.getElementById('stat-orders').textContent = state.orders.length;
+  const rev = state.orders.filter(o=> o.created >= Date.now()-30*24*3600*1000).reduce((s,o)=>s+(o.total||0),0);
+  document.getElementById('stat-rev').textContent = rev.toFixed(2) + ' ₴';
+  document.getElementById('recent-changes').textContent = state.logs.slice().slice(-5).map(l=>l.msg).reverse().join(' • ');
+}
 
-/* Payments */function renderPayments(){
-  const tbody = document.querySelector('#payments-table tbody');
-  tbody.innerHTML = '';
-  let unpaidCount = 0;
-  state.orders.slice().sort((a,b)=>b.created - a.created).forEach(o=>{
-    if (!o.paid) unpaidCount++;
-    const client = findClient(o.clientId);
-    const paidTag = o.paid ? '<span class="tag-paid">Оплачено</span>' : '<button class="btn secondary" data-action="pay" data-id="'+o.id+'">Позначити оплату</button>';
-    const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${o.id.substring(0,6)}...</td><td>${client?escapeHtml(client.name):'—'}</td><td>${formatPrice(o.total)}</td><td>${paidTag}</td>`;
-    tbody.appendChild(tr);
+/* Users management (admin) */
+function renderUsersTab(){
+  const div = document.getElementById('users-list'); div.innerHTML='';
+  state.users.filter(u=>u.role==='master').forEach(u=>{
+    const el = document.createElement('div'); el.style.display='flex'; el.style.justifyContent='space-between'; el.style.alignItems='center'; el.style.padding='6px 0';
+    el.innerHTML = `<div>${u.name} (PIN: ${atob(u.pin)})</div><div><button class="btn" data-action="del-user" data-id="${u.id}">Видалити</button></div>`;
+    div.appendChild(el);
   });
-  document.getElementById('unpaid-count').textContent = unpaidCount;
 }
 
-/* ---------- Modals Helpers ---------- */
-const modal = document.getElementById('modal');
-const modalInner = document.getElementById('modal-inner');
+/* Actions */
+document.getElementById('add-user').addEventListener('click', ()=>{
+  const name = document.getElementById('new-user-name').value.trim();
+  const pin = document.getElementById('new-user-pin').value.trim();
+  if(!name || !pin){ show('Введіть імя та PIN', true); return; }
+  const u = {id:uid('u'), name, role:'master', pin:hashPin(pin), assignedClientIds:[]};
+  state.users.push(u); save(); show('Майстра додано');
+});
+document.getElementById('login-btn').addEventListener('click', ()=>{
+  const uidSel = document.getElementById('login-user').value;
+  const pin = document.getElementById('login-pin').value.trim();
+  const user = state.users.find(u=>u.id===uidSel);
+  if(!user){ show('Користувача не знайдено', true); return; }
+  if(user.pin === hashPin(pin)){
+    setCurrentUser(user);
+    document.getElementById('login-modal').classList.remove('active');
+    document.getElementById('app').style.display='flex';
+    renderAll();
+    show('Вхід успішний');
+  } else show('Невірний PIN', true);
+});
+document.getElementById('login-demo').addEventListener('click', ()=>{ seedDemo(); document.getElementById('login-modal').classList.remove('active'); document.getElementById('app').style.display='flex'; setCurrentUser(state.users.find(u=>u.role==='admin')); renderAll(); });
 
-function openModal(html){
-  modalInner.innerHTML = html;
-  modal.style.display = 'flex';
-  const closeBtn = modalInner.querySelector('[data-close]');
-  if(closeBtn) closeBtn.addEventListener('click', closeModal);
-}
-function closeModal(){ modal.style.display = 'none'; modalInner.innerHTML = ''; }
+document.getElementById('logout').addEventListener('click', ()=>{ setCurrentUser(null); document.getElementById('app').style.display='none'; document.getElementById('login-modal').classList.add('active'); });
 
-/* ---------- Client CRUD Logic (omitted for brevity, assume previous version) ---------- */
-// ... (Функції saveClient, deleteClient, openClientModal залишаються з попередньої версії)
-function saveClient(id){
-    const name = document.getElementById('client-name').value.trim();
-    const phone = document.getElementById('client-phone').value.trim();
-    const car = document.getElementById('client-car').value.trim();
-    const note = document.getElementById('client-note').value.trim();
+document.getElementById('btn-add-client').addEventListener('click', ()=> openAddClient());
+document.getElementById('btn-add-order-master').addEventListener('click', ()=> openOrderForm(currentUser()?.id));
 
-    if (!name || !phone) {
-        showNotification('Ім\'я та Телефон є обов\'язковими полями!', true);
-        return;
-    }
+document.getElementById('export-json').addEventListener('click', ()=> {
+  const a = document.createElement('a'); a.href = 'data:application/json,'+encodeURIComponent(JSON.stringify(state,null,2)); a.download='fixiki_pwa.json'; a.click();
+  show('Експорт JSON готовий');
+});
+document.getElementById('import-file').addEventListener('change', (e)=> {
+  const f = e.target.files[0]; if(!f) return; const r=new FileReader(); r.onload=()=>{ try{ const imp = JSON.parse(r.result); if(imp.users) { state=imp; save(); show('Імпортовано'); } else show('Невірний формат', true);}catch(err){ show('Помилка імпорту', true);} }; r.readAsText(f);
+});
 
-    if (id) {
-        const client = findClient(id);
-        Object.assign(client, { name, phone, car, note });
-        showNotification('Клієнта оновлено!');
-    } else {
-        state.clients.push({ id: uid('c'), name, phone, car, note, created: Date.now() });
-        showNotification('Клієнта додано!');
-    }
-    closeModal();
-    saveState();
-    switchView('clients');
-}
+/* Delegated actions */
+document.body.addEventListener('click', (e)=>{
+  const btn = e.target.closest('[data-action]'); if(!btn) return;
+  const act = btn.dataset.action, id = btn.dataset.id;
+  if(act==='assign'){ openAssignMaster(id); }
+  else if(act==='new-order'){ openOrderForm(id); }
+  else if(act==='view-order'){ viewOrder(id); }
+  else if(act==='take-stock'){ takeStockForOrder(id); }
+  else if(act==='del-user'){ state.users = state.users.filter(u=>u.id!==id); save(); show('Майстра видалено'); }
+  else if(act==='edit-stock'){ editStock(id); }
+});
 
-function deleteClient(id) {
-    if (confirm("Ви впевнені, що хочете видалити цього клієнта? Усі пов'язані наряди залишаться.")) {
-        state.clients = state.clients.filter(c => c.id !== id);
-        state.orders.filter(o => o.clientId === id).forEach(o => o.clientId = null);
-        saveState();
-        showNotification('Клієнта видалено.');
-    }
-}
-
-function openClientModal(clientId = null) {
-  const isEdit = !!clientId;
-  const client = isEdit ? findClient(clientId) : {};
-
-  const html = `
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px">
-      <strong>${isEdit ? 'Редагувати клієнта' : 'Додати клієнта'}</strong>
-      <button data-close class="btn ghost secondary">Закрити</button>
-    </div>
-    <div class="flex-col">
-      <div class="form-grid">
-        <input id="client-name" placeholder="Ім'я*" value="${escapeHtml(client.name || '')}" required>
-        <input id="client-phone" placeholder="Телефон*" value="${escapeHtml(client.phone || '')}" required>
-        <input id="client-car" placeholder="Авто (марка/номер)" value="${escapeHtml(client.car || '')}">
-      </div>
-      <textarea id="client-note" placeholder="Нотатки" style="width:100%;min-height:80px">${escapeHtml(client.note || '')}</textarea>
-      <button id="save-client" class="btn">${isEdit ? 'Зберегти зміни' : 'Додати клієнта'}</button>
-    </div>
-  `;
+/* Add client (admin) */
+function openAddClient(){
+  const html = `<div style="display:flex;flex-direction:column;gap:8px">
+    <input id="c-name" placeholder="Ім'я">
+    <input id="c-phone" placeholder="Телефон">
+    <input id="c-car" placeholder="Авто">
+    <select id="c-master"><option value="">— без майстра —</option>${state.users.filter(u=>u.role==='master').map(u=>`<option value="${u.id}">${u.name}</option>`).join('')}</select>
+    <div style="display:flex;gap:8px;justify-content:flex-end"><button id="save-client" class="btn">Зберегти</button> <button data-close class="btn secondary">Відмінити</button></div>
+  </div>`;
   openModal(html);
-  document.getElementById('save-client').addEventListener('click', () => saveClient(clientId));
+  document.getElementById('save-client').addEventListener('click', ()=>{
+    const name = document.getElementById('c-name').value.trim();
+    const phone = document.getElementById('c-phone').value.trim();
+    const car = document.getElementById('c-car').value.trim();
+    const masterId = document.getElementById('c-master').value || null;
+    if(!name || !phone){ show('Імя та телефон потрібні', true); return; }
+    const c = {id:uid('c'), name, phone, car, masterId};
+    state.clients.push(c);
+    // assign client id to master assignedClientIds
+    if(masterId){
+      const m = state.users.find(u=>u.id===masterId);
+      if(m){ m.assignedClientIds = m.assignedClientIds || []; m.assignedClientIds.push(c.id); }
+    }
+    state.logs.push({ts:Date.now(), msg:`Додано клієнта ${name}`});
+    save(); closeModal(); show('Клієнта додано');
+  });
 }
 
-/* ---------- Service & Stock CRUD Logic (omitted for brevity, assume previous version) ---------- */
-// ... (Функції saveService, deleteService, openServiceModal, saveStock, deleteStock, openStockModal, consumeStock залишаються з попередньої версії)
-function saveService(id){
-    const name = document.getElementById('service-name').value.trim();
-    const price = Number(document.getElementById('service-price').value.trim());
-
-    if (!name || isNaN(price) || price <= 0) {
-        showNotification('Перевірте Назву та Ціну!', true);
-        return;
-    }
-
-    if (id) {
-        constservice = findService(id);
-        Object.assign(service, { name, price });
-        showNotification('Послугу оновлено!');
-    } else {
-        state.services.push({ id: uid('s'), name, price });
-        showNotification('Послугу додано!');
-    }
-    closeModal();
-    saveState();
-    switchView('services');
-}
-
-function deleteService(id) {
-    if (confirm("Ви впевнені, що хочете видалити цю послугу?")) {
-        state.services = state.services.filter(s => s.id !== id);
-        saveState();
-        showNotification('Послугу видалено.');
-    }
-}
-
-function openServiceModal(serviceId = null) {
-  const isEdit = !!serviceId;
-  const service = isEdit ? findService(serviceId) : {};
-
-  const html = `
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px">
-      <strong>${isEdit ? 'Редагувати послугу' : 'Додати послугу'}</strong>
-      <button data-close class="btn ghost secondary">Закрити</button>
-    </div>
-    <div class="flex-col">
-      <div class="form-grid" style="grid-template-columns: 2fr 1fr;">
-        <input id="service-name" placeholder="Назва послуги*" value="${escapeHtml(service.name || '')}" required>
-        <input id="service-price" type="number" step="0.01" placeholder="Ціна (₴)*" value="${service.price || ''}" required>
-      </div>
-      <button id="save-service" class="btn">${isEdit ? 'Зберегти зміни' : 'Додати послугу'}</button>
-    </div>
-  `;
+/* Assign master to client */
+function openAssignMaster(clientId){
+  const html = `<div style="display:flex;flex-direction:column;gap:8px">
+    <div>Оберіть майстра для клієнта</div>
+    <select id="assign-master">${state.users.filter(u=>u.role==='master').map(u=>`<option value="${u.id}">${u.name}</option>`).join('')}</select>
+    <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:8px"><button id="save-assign" class="btn">Призначити</button> <button data-close class="btn secondary">Відмінити</button></div>
+  </div>`;
   openModal(html);
-  document.getElementById('save-service').addEventListener('click', () => saveService(serviceId));
+  document.getElementById('save-assign').addEventListener('click', ()=>{
+    const masterId = document.getElementById('assign-master').value;
+    const client = state.clients.find(c=>c.id===clientId);
+    if(client){
+      // remove from previous master's list
+      if(client.masterId){
+        const prev = state.users.find(u=>u.id===client.masterId);
+        if(prev && prev.assignedClientIds) prev.assignedClientIds = prev.assignedClientIds.filter(x=>x!==client.id);
+      }
+      client.masterId = masterId;
+      const m = state.users.find(u=>u.id===masterId);
+      if(m){ m.assignedClientIds = m.assignedClientIds || []; if(!m.assignedClientIds.includes(client.id)) m.assignedClientIds.push(client.id); }
+      state.logs.push({ts:Date.now(), msg:`Клієнту ${client.name} призначено майстра`});
+      save(); closeModal(); show('Призначено');
+    }
+  });
 }
 
-function saveStock(id){
-    const name = document.getElementById('stock-name').value.trim();
-    const qty = Number(document.getElementById('stock-qty').value.trim());
-    const min = Number(document.getElementById('stock-min').value.trim());
-    const price = Number(document.getElementById('stock-price').value.trim());
-
-    if (!name || isNaN(qty) || isNaN(min) || isNaN(price) || price <= 0) {
-        showNotification('Перевірте всі поля: Назва, Кількість, Мінімум, Ціна!', true);
-        return;
-    }
-
-    if (id) {
-        const item = findStock(id);
-        Object.assign(item, { name, qty, min, price });
-        showNotification('Товар оновлено!');
-    } else {
-        state.stock.push({ id: uid('p'), name, qty, min, price });
-        showNotification('Товар додано на склад!');
-    }
-    closeModal();
-    saveState();
-    switchView('stock');
-}
-
-function deleteStock(id) {
-    if (confirm("Ви впевнені, що хочете видалити цей товар зі складу?")) {
-        state.stock = state.stock.filter(p => p.id !== id);
-        saveState();
-        showNotification('Товар видалено.');
-    }
-}
-
-function openStockModal(stockId = null) {
-  const isEdit = !!stockId;
-  const item = isEdit ? findStock(stockId) : {};
-
-  const html = `
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px">
-      <strong>${isEdit ? 'Редагувати товар' : 'Додати товар на склад'}</strong>
-      <button data-close class="btn ghost secondary">Закрити</button>
-    </div>
-    <div class="flex-col">
-      <input id="stock-name" placeholder="Назва товару*" value="${escapeHtml(item.name || '')}" required>
-      <div class="form-grid" style="grid-template-columns: 1fr 1fr 1fr;">
-        <input id="stock-qty" type="number" placeholder="Кількість*" value="${item.qty || 0}" required>
-        <input id="stock-min" type="number" placeholder="Мінімум*" value="${item.min || 1}" required>
-        <input id="stock-price" type="number" step="0.01" placeholder="Ціна продажу (₴)*" value="${item.price || ''}" required>
-      </div>
-      <button id="save-stock" class="btn">${isEdit ? 'Зберегти зміни' : 'Додати товар'}</button>
-    </div>
-  `;
+/* Order form */
+function openOrderForm(clientId=null){
+  const user = currentUser();
+  if(!user){ show('Не вхід'); return; }
+  const clientOptions = state.clients.map(c=>`<option value="${c.id}">${c.name} ${c.car?'- '+c.car:''}</option>`).join('');
+  const html = `<div style="display:flex;flex-direction:column;gap:8px">
+    <select id="o-client">${clientOptions}</select>
+    <select id="o-type"><option value="робота">Виконані роботи</option><option value="запчастини">Запчастини</option></select>
+    <div id="o-items"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end"><button id="add-o-item" class="btn">Додати позицію</button><button id="save-order" class="btn">Зберегти</button></div>
+  </div>`;
   openModal(html);
-  document.getElementById('save-stock').addEventListener('click', () => saveStock(stockId));
+  if(clientId) document.getElementById('o-client').value = clientId;
+  document.getElementById('add-o-item').addEventListener('click', ()=> {
+    const row = document.createElement('div'); row.style.display='flex'; row.style.gap='6px';
+    row.innerHTML = `<input class="oi-name" placeholder="Назва"><input class="oi-qty" type="number" value="1" style="width:80px"><input class="oi-price" type="number" value="0" style="width:100px"><button class="btn ghost" onclick="this.parentElement.remove()">X</button>`;
+    document.getElementById('o-items').appendChild(row);
+  });
+  document.getElementById('save-order').addEventListener('click', ()=>{
+    const clientId = document.getElementById('o-client').value;
+    const type = document.getElementById('o-type').value;
+    const items = Array.from(document.querySelectorAll('#o-items .oi-name')).map((el,i)=>({
+      name: el.value,
+      qty: Number(document.querySelectorAll('#o-items .oi-qty')[i].value||0),
+      price: Number(document.querySelectorAll('#o-items .oi-price')[i].value||0)
+    })).filter(it=>it.name && it.qty>0);
+    if(items.length===0){ show('Додайте позиції', true); return; }
+    const total = items.reduce((s,it)=>s + it.qty*it.price,0);
+    const order = {id:uid('o'), clientId, masterId: user.role==='master'?user.id:null, type: type==='запчастини'?'запчастини':'робота', items, total, status:'в роботі', created:Date.now()};
+    state.orders.push(order);
+    state.logs.push({ts:Date.now(), msg:`Додано наряд ${order.id}`});
+    save(); closeModal(); show('Наряд створено');
+  });
 }
 
-function consumeStock(id) {
-    const item = findStock(id);
-    if (!item) return;
-    
-    const qtyToConsume = prompt(`Списати скільки одиниць товару "${item.name}" (Зараз: ${item.qty})?`);
-    const num = Number(qtyToConsume);
-    
-    if (num > 0 && num <= item.qty) {
-        item.qty -= num;
-        saveState();
-        showNotification(`Списано ${num} од. ${item.name}. Залишок: ${item.qty}`);
-    } else if (qtyToConsume !== null) {
-        showNotification('Некоректна кількість списання або перевищує залишок.', true);
-    }
+/* View order */
+function viewOrder(id){
+  const o = state.orders.find(x=>x.id===id); if(!o) return;
+  const client = state.clients.find(c=>c.id===o.clientId);
+  const itemsHtml = o.items.map(it=>`<tr><td>${it.name}</td><td>${it.qty}</td><td>${it.price} ₴</td><td>${(it.qty*it.price).toFixed(2)} ₴</td></tr>`).join('');
+  const html = `<h3>Наряд ${o.id}</h3><div class="small">Клієнт: ${client?client.name:'—'}</div><div class="card"><table class="table"><thead><tr><th>Назва</th><th>К-ть</th><th>Ціна</th><th>Сума</th></tr></thead><tbody>${itemsHtml}</tbody></table></div>
+    <div style="display:flex;gap:8px"><button id="mark-done" class="btn">Позначити виконано</button><button id="print-pdf" class="btn secondary">Друк PDF</button></div>`;
+  openModal(html);
+  document.getElementById('mark-done').addEventListener('click', ()=>{
+    o.status='виконано'; state.logs.push({ts:Date.now(), msg:`Наряд ${o.id} виконано`}); save(); closeModal(); show('Наряд виконано');
+  });
+  document.getElementById('print-pdf').addEventListener('click', ()=> {
+    if(window.jspdf && window.jspdf.jsPDF){
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      let y=20; doc.setFontSize(14); doc.text('СТО Фіксики — Наряд',14,y); y+=8;
+      doc.setFontSize(11); doc.text(`Наряд: ${o.id}`,14,y); y+=6; doc.text(`Клієнт: ${client?client.name:''}`,14,y); y+=8;
+      o.items.forEach(it=>{ doc.text(`${it.name} x${it.qty} — ${it.price} ₴`,14,y); y+=6; if(y>270){ doc.addPage(); y=14; } });
+      y+=8; doc.text(`Разом: ${o.total.toFixed(2)} ₴`,14,y);
+      doc.save(`narjad_${o.id}.pdf`); show('PDF збережено');
+    } else show('jsPDF не завантажено', true);
+  });
 }
 
-
-/* ---------- CORE ORDER LOGIC ---------- */
-
-/**
- * Списує/повертає товари зі складу
- * @param {object} order - Об'єкт наряду
- * @param {boolean} shouldSpend - true: списати, false: повернути
- */
-function updateStockFromOrder(order, shouldSpend) {
-    let changed = false;
-    order.items.filter(item => item.type === 'stock').forEach(item => {
-        const stockItem = findStock(item.id);
-        if (stockItem) {
-            if (shouldSpend && !item.spended) {
-                stockItem.qty -= item.qty;
-                item.spended = true;
-                changed = true;
-            } else if (!shouldSpend && item.spended) {
-                stockItem.qty += item.qty;
-                item.spended = false;
-                changed = true;
-            }
-        }
+/* Take stock for order (master) */
+function takeStockForOrder(orderId){
+  const o = state.orders.find(x=>x.id===orderId);
+  if(!o) return;
+  // show list of stock items and allow to deduct quantities
+  let html = '<h3>Списати зі складу</h3><div style="display:flex;flex-direction:column;gap:8px">';
+  state.stock.forEach(s=>{
+    html += `<div style="display:flex;gap:8px;align-items:center"><div style="flex:1">${s.name} (зараз: ${s.qty})</div><input type="number" min="0" max="${s.qty}" value="0" id="take_${s.id}" style="width:80px"></div>`;
+  });
+  html += `<div style="display:flex;justify-content:flex-end;gap:8px;margin-top:8px"><button id="do-take" class="btn">Списати</button> <button data-close class="btn secondary">Відмінити</button></div></div>`;
+  openModal(html);
+  document.getElementById('do-take').addEventListener('click', ()=>{
+    state.stock.forEach(s=>{
+      const val = Number(document.getElementById('take_'+s.id).value||0);
+      if(val>0){
+        if(val > s.qty){ show(`Недостатньо ${s.name}`, true); return; }
+        s.qty -= val;
+      }
     });
-    if (changed) {
-        order.spended = shouldSpend;
-        return true;
-    }
-    return false;
+    state.logs.push({ts:Date.now(), msg:`Майстер ${currentUser().name} списав матеріали для ${orderId}`});
+    save(); closeModal(); show('Списано зі складу');
+  });
 }
 
-/**
- * Розрахунок загальної суми наряду
- * @param {Array} items - Масив позицій наряду
- * @returns {number} Загальна сума
- */
-function calculateTotal(items) {
-    return items.reduce((sum, item) => sum + (item.qty * item.price), 0);
+/* edit stock/service (admin) */
+function editStock(id){
+  const p = state.stock.find(x=>x.id===id);
+  const html = `<div style="display:flex;flex-direction:column;gap:8px"><input id="e-name" value="${p.name}"><input id="e-qty" type="number" value="${p.qty}"><input id="e-min" type="number" value="${p.min}"><input id="e-price" type="number" value="${p.price}"><div style="display:flex;gap:8px;justify-content:flex-end"><button id="save-stock" class="btn">Зберегти</button><button data-close class="btn secondary">Відмінити</button></div></div>`;
+  openModal(html);
+  document.getElementById('save-stock').addEventListener('click', ()=>{
+    p.name = document.getElementById('e-name').value.trim();
+    p.qty = Number(document.getElementById('e-qty').value||0);
+    p.min = Number(document.getElementById('e-min').value||0);
+    p.price = Number(document.getElementById('e-price').value||0);
+    save(); closeModal(); show('Оновлено');
+  });
+}
+function editService(id){
+  const s = state.services.find(x=>x.id===id);
+  const html = `<div style="display:flex;flex-direction:column;gap:8px"><input id="s-name" value="${s.name}"><input id="s-price" type="number" value="${s.price}"><div style="display:flex;gap:8px;justify-content:flex-end"><button id="save-s" class="btn">Зберегти</button><button data-close class="btn secondary">Відмінити</button></div></div>`;
+  openModal(html);
+  document.getElementById('save-s').addEventListener('click', ()=>{ s.name = document.getElementById('s-name').value.trim(); s.price = Number(document.getElementById('s-price').value||0); save(); closeModal(); show('Оновлено'); });
 }
 
-/**
- * Зберігає (створює або оновлює) наряд
- * @param {string} orderId - ID наряду або null для створення
- */
-function saveOrder(orderId = null) {
-    const clientId = document.getElementById('order-client-id').value;
-    const car = document.getElementById('order-car').value.trim();
-    const status = document.getElementById('order-status').value;
-    const items = [];
-    
-    if (!clientId) {
-        showNotification('Будь ласка, виберіть клієнта!', true);
-        return;
-    }
+/* Modal helpers */
+function openModal(html){ document.getElementById('modal').classList.add('active'); document.getElementById('modal-inner').innerHTML = html; const closeBtn = document.querySelector('[data-close]'); if(closeBtn) closeBtn.addEventListener('click', closeModal); }
+function closeModal(){ document.getElementById('modal').classList.remove('active'); document.getElementById('modal-inner').innerHTML=''; }
 
-    // Збір позицій з форми
-    document.querySelectorAll('.order-item-row').forEach(row => {
-        const type = row.querySelector('.item-type').value;
-        const id = row.querySelector('.item-id').value;
-        const qty = Number(row.querySelector('.item-qty').value);
-        const price = Number(row.querySelector('.item-price').value);
-
-        if (id && qty > 0 && price >= 0) {
-            let name = '';
-            if (type === 'service') name = findService(id)?.name;
-            else if (type === 'stock') name = findStock(id)?.name;
-
-            items.push({
-                type: type,
-                id: id,
-                qty: qty,
-                price: price,
-                name: name || 'Невідома позиція', // Зберігаємо ім'я на момент створення
-                spended: row.dataset.spended === 'true' // Передаємо статус списання
-            });
-        }
-    });
-
-    if (items.length === 0) {
-        showNotification('Наряд має містити хоча б одну позицію!', true);
-        return;
-    }
-
-    const total = calculateTotal(items);
-    let isNew = !orderId;
-    let order;
-
-    if (orderId) {
-        order = findOrder(orderId);
-        if (!order) return;
-        
-        // Перевіряємо, чи був змінений статус на "виконано"
-        const statusChangedToCompleted = order.status !== 'виконано' && status === 'виконано';
-        const statusChangedFromCompleted = order.status === 'виконано' && status !== 'виконано';
-
-        // Оновлення полів
-        Object.assign(order, { clientId, car, status, items, total });
-
-        // Логіка списання запасів
-        if (statusChangedToCompleted) {
-            if (updateStockFromOrder(order, true)) {
-                showNotification(`Запаси для наряду ${orderId.substring(0,6)}... списано зі складу!`);
-            }
-        } else if (statusChangedFromCompleted) {
-            if (updateStockFromOrder(order, false)) {
-                showNotification(`Запаси для наряду ${orderId.substring(0,6)}... повернуто на склад!`);
-            }
-        }
-
-        showNotification('Наряд оновлено!');
-    } else {
-        order = {
-            id: uid('o'),
-            clientId,
-            car,
-            items,
-            total,
-            status,
-            created: Date.now(),
-            paid: false,
-            spended: false
-        };
-        state.orders.push(order);
-        
-        // Якщо новий наряд відразу "виконано" - списати
-        if (status === 'виконано') {
-            updateStockFromOrder(order, true);
-        }
-        showNotification('Новий наряд створено!');
-    }
-
-    closeModal();
-    saveState();
-    switchView('orders');
+/* Assign via button in clients table */
+function assignClientToMaster(clientId, masterId){
+  const client = state.clients.find(c=>c.id===clientId);
+  if(!client) return;
+  // remove from previous master list
+  if(client.masterId){
+    const prev = state.users.find(u=>u.id===client.masterId);
+    if(prev && prev.assignedClientIds) prev.assignedClientIds = prev.assignedClientIds.filter(x=>x!==client.id);
+  }
+  client.masterId = masterId;
+  const m = state.users.find(u=>u.id===masterId);
+  if(m){ m.assignedClientIds = m.assignedClientIds || []; if(!m.assignedClientIds.includes(client.id)) m.assignedClientIds.push(client.id); }
+  state.logs.push({ts:Date.now(), msg:`Клієнту ${client.name} призначено майстра ${m.name}`});
+  save(); show('Призначено майстра');
 }
 
-function deleteOrder(id) {
-    if (confirm("Ви впевнені, що хочете видалити цей наряд? Якщо він мав статус 'виконано', запаси можуть не повернутися на склад.")) {
-        state.orders = state.orders.filter(o => o.id !== id);
-        showNotification('Наряд видалено.');
-        saveState();
-    }
+/* Open assign modal */
+function openAssignMaster(clientId){
+  openAssignMaster; // placeholder
 }
 
-functiongetOrderRowHtml(item, index, isEditMode = true) {
-    const isService = item.type === 'service';
-    const sourceList = isService ? state.services : state.stock;
-    const selectedItem = sourceList.find(i => i.id === item.id);
-    
-    // Встановлюємо ціну з наряду (вона може відрізнятися від поточної ціни в словнику)
-    const priceValue = item.price || selectedItem?.price || 0;
-    
-    const rowClass = isService ? 'style="background:rgba(47,156,255,0.05)"' : 'style="background:rgba(255,255,255,0.03)"';
+/* Delegation for menu */
+document.querySelectorAll('.menu button').forEach(b=> b.addEventListener('click', ()=>{
+  document.querySelectorAll('.menu button').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active');
+  const view = b.dataset.view;
+  document.querySelectorAll('.view').forEach(v=>v.classList.add('hidden'));
+  document.getElementById('view-'+view).classList.remove('hidden');
+  document.getElementById('page-title').textContent = b.textContent;
+}));
 
-    const itemSelect = sourceList.map(i => `<option value="${i.id}" ${i.id === item.id ? 'selected' : ''}>${escapeHtml(i.name)} (${formatPrice(i.price)})</option>`).join('');
+/* storage event to sync across tabs */
+window.addEventListener('storage', (e)=>{ if(e.key===LS) load(); });
 
-    const deleteBtn = isEditMode ? `<button class="btn secondary danger small" data-action="remove-item" data-index="${index}" style="padding:6px 8px;">X</button>` : '';
+/* initial load */
+load();
+renderAll();
 
-    return `
-        <tr class="order-item-row" data-index="${index}" ${rowClass} data-spended="${item.spended}">
-            <td><input type="hidden" class="item-type" value="${item.type}">${isService ? 'Послуга' : 'Товар'}</td>
-            <td>
-                <select class="item-id" data-type="${item.type}" required ${isEditMode ? '' : 'disabled'}>
-                    <option value="">— Виберіть —</option>
-                    ${itemSelect}
-                </select>
-            </td>
-            <td><input type="number" class="item-qty" value="${item.qty}" min="1" required ${isEditMode ? '' : 'disabled'}></td>
-            <td><input type="number" step="0.01" class="item-price" value="${priceValue}" required ${isEditMode ? '' : 'disabled'}></td>
-            <td><span class="item-subtotal">${formatPrice(item.qty * priceValue)}</span></td>
-            <td>${deleteBtn}</td>
-        </tr>
-    `;
-}
+/* expose some functions to global for inline handlers */
+window.openOrderForm = openOrderForm;
+window.viewOrder = viewOrder;
 
-function openOrderModal(orderId = null) {
-    const isEdit = !!orderId;
-    const order = isEdit ? findOrder(orderId) : {
-        id: uid('o'), clientId: null, car: '', items: [], total: 0, status: 'в роботі', created: Date.now(), paid: false, spended: false
-    };
+/* Keyboard shortcut: ctrl+shift+d to reset demo */
+document.addEventListener('keydown', (e)=>{ if(e.ctrlKey && e.shiftKey && e.key==='D'){ seedDemo(); show('Demo reset'); } });
 
-    const client = order.clientId ? findClient(order.clientId) : null;
-    let currentCar = order.car || client?.car || '';
-
-    const html = `
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px">
-          <strong>${isEdit ? `Наряд № ${order.id.substring(0,8)}...` : 'Новий Наряд-замовлення'}</strong>
-          <button data-close class="btn ghost secondary">Закрити</button>
-        </div>
-        
-        <div class="card" style="margin-bottom:15px">
-            <div class="form-grid">
-                <select id="order-client-id" required>
-                    <option value="" disabled ${!order.clientId ? 'selected' : ''}>— Виберіть клієнта —</option>
-                    ${state.clients.map(c => `<option value="${c.id}" ${c.id === order.clientId ? 'selected' : ''}>${escapeHtml(c.name)} (${escapeHtml(c.car || '—')})</option>`).join('')}
-                </select>
-                <input id="order-car" placeholder="Авто (марка/номер)" value="${escapeHtml(currentCar)}">
-                <select id="order-status">
-                    ${ORDER_STATUSES.map(s => `<option value="${s}" ${s === order.status ? 'selected' : ''}>${s.charAt(0).toUpperCase() + s.slice(1)}</option>`).join('')}
-                </select>
-                <select id="order-paid" ${order.paid ? 'style="border-color:var(--success)"' : ''}>
-                    <option value="false" ${!order.paid ? 'selected' : ''}>Не оплачено</option>
-                    <option value="true" ${order.paid ? 'selected' : ''}>Оплачено</option>
-                </select>
-            </div>
-        </div>
-
-        <div class="card" style="margin-bottom:15px">
-            <strong>Позиції Наряду</strong>
-            <table class="table" id="order-items-table" style="margin-top:8px">
-                <thead><tr><th>Тип</th><th>Назва</th><th>Кіл-ть</th><th>Ціна за од.</th><th>Сума</th><th></th></tr></thead>
-                <tbody id="order-items-tbody">
-                    ${order.items.map((item, index) => getOrderRowHtml(item, index, true)).join('')}
-                </tbody>
-            </table>
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:15px">
-                <div>
-                    <button id="add-service-item" class="btn secondary small" style="padding:6px 10px;">+ Послуга</button>
-                    <button id="add-stock-item" class="btn secondary small" style="padding:6px 10px;">+ Товар</button>
-                </div>
-                <strong>Загальна Сума: <span id="order-total">${formatPrice(order.total)}</span></strong>
-            </div>
-        </div>
-        
-        <button id="save-order-btn" class="btn" style="width:100%">${isEdit ? 'Зберегти зміни' : 'Створити Наряд'}</button>
-    `;
-    openModal(html);
-    
-    // Прив'язка логіки
-    document.getElementById('save-order-btn').addEventListener('click', () => saveOrder(orderId));
-    document.getElementById('add-service-item').addEventListener('click', () => addItemToOrder('service'));
-    document.getElementById('add-stock-item').addEventListener('click', () => addItemToOrder('stock'));
-    document.getElementById('order-client-id').addEventListener('change', updateCarField);
-    document.getElementById('order-paid').addEventListener('change', updatePaidStatus);
-
-    // Делегування подій для динамічних полів (Qty, Price, Select)
-    const tbody = document.getElementById('order-items-tbody');
-    tbody.addEventListener('input', handleItemChange);
-    tbody.addEventListener('click', handleItemAction);
-
-    // Початковий розрахунок
-    updateOrderTotalDisplay();
-}
-
-function updatePaidStatus(e) {
-    const isPaid = e.target.value === 'true';
-    e.target.style.borderColor = isPaid ? 'var(--success)' : '';
-}
-
-function updateCarField(e) {
-    const clientId = e.target.value;
-    const client = findClient(clientId);
-    document.getElementById('order-car').value = client?.car || '';
-}
-
-function addItemToOrder(type) {
-    const tbody = document.getElementById('order-items-tbody');
-    const newIndex = tbody.children.length; // Використовуємо довжину як індекс
-    const newItem = {
-        type: type,
-        id: '',
-        qty: 1,
-        price: 0,
-        name: '',
-        spended: false
-    };
-    tbody.insertAdjacentHTML('beforeend', getOrderRowHtml(newItem, newIndex, true));
-}
-
-function updateItemPriceAndSubtotal(row) {
-    const type = row.querySelector('.item-type').value;
-    const id = row.querySelector('.item-id').value;
-    const qty = Number(row.querySelector('.item-qty').value);
-    
-    let priceInput = row.querySelector('.item-price');
-    let currentPrice = Number(priceInput.value);
-
-    // Якщо змінено Select, оновлюємо ціну за замовчуванням
-    if (event.target.classList.contains('item-id') || (currentPrice === 0 && id)) {
-        let defaultPrice = 0;
-        if (type === 'service') {
-            defaultPrice = findService(id)?.price || 0;
-        } else if (type === 'stock') {
-            defaultPrice = findStock(id)?.price || 0;
-        }
-        priceInput.value = defaultPrice.toFixed(2);
-        currentPrice = defaultPrice;
-    }
-
-    const subtotal = qty * currentPrice;
-    row.querySelector('.item-subtotal').textContent = formatPrice(subtotal);
-    updateOrderTotalDisplay();
-}
-
-function handleItemChange(e) {
-    const row = e.target.closest('.order-item-row');
-    if (row && (e.target.classList.contains('item-id') || e.target.classList.contains('item-qty') || e.target.classList.contains('item-price'))) {
-        updateItemPriceAndSubtotal(row);
-    }
-}
-
-function handleItemAction(e) {
-    const btn = e.target.closest('[data-action="remove-item"]');
-    if (btn) {
-        e.preventDefault();
-        const row = btn.closest('.order-item-row');
-        if (row) {
-            row.remove();
-            updateOrderTotalDisplay();
-        }
-    }
-}
-
-function updateOrderTotalDisplay() {
-    let total = 0;
-    document.querySelectorAll('.order-item-row').forEach(row => {
-        const qty = Number(row.querySelector('.item-qty').value);
-        const price = Number(row.querySelector('.item-price').value);
-        if (!isNaN(qty) && !isNaN(price)) {
-            total += qty * price;
-        }
-    });
-    document.getElementById('order-total').textContent = formatPrice(total);
-}
-
-// Вид тільки для перегляду (View Order)
-function openViewOrderModal(orderId) {
-    const order = findOrder(orderId);
-    if (!order) return;
-
-    const client = findClient(order.clientId);
-    const orderDate = new Date(order.created).toLocaleString();
-    const paidText = order.paid ? `<span class="tag-paid">Оплачено</span>` : `<span class="tag-unpaid">Не оплачено</span>`;
-
-    const html = `
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px">
-            <strong>Наряд № ${order.id.substring(0,8)}... (від ${orderDate})</strong>
-            <div>
-                <button class="btn ghost" data-action="edit-order-from-view" data-id="${orderId}">Редагувати</button>
-                <button data-close class="btn secondary">Закрити</button>
-            </div>
-        </div>
-        
-        <div class="card" style="margin-bottom:15px">
-            <div class="form-grid" style="grid-template-columns: 1fr 1fr 1fr 1fr;">
-                <div class="flex-col"><strong>Клієнт:</strong> <span class="muted">${escapeHtml(client?.name || '—')}</span></div>
-                <div class="flex-col"><strong>Авто:</strong> <span class="muted">${escapeHtml(order.car || '—')}</span></div>
-                <div class="flex-col"><strong>Статус:</strong> <span class="muted">${order.status.charAt(0).toUpperCase() + order.status.slice(1)}</span></div>
-                <div class="flex-col"><strong>Оплата:</strong> ${paidText}</div>
-            </div>
-        </div>
-
-        <div class="card">
-            <strong>Позиції Наряду</strong>
-            <table class="table" style="margin-top:8px">
-                <thead><tr><th>Тип</th><th>Назва</th><th>Кіл-ть</th><th>Ціна за од.</th><th>Сума</th></tr></thead>
-                <tbody>
-                    ${order.items.map((item) => getOrderRowHtml(item, 0, false)).join('')}
-                </tbody>
-            </table>
-            <div style="text-align:right; margin-top:15px">
-                <strong style="font-size:1.2em">ЗАГАЛОМ: ${formatPrice(order.total)}</strong>
-            </div>
-        </div>
-    `;
-    openModal(html);
-}
-
-
-/* ---------- Data Import/Export Logic (omitted for brevity, assume previous version) ---------- */
-// ... (Функції для імпорту/Export Logic (omitted for brevity, assume previous version) ---------- */
-// ... (Функції для імпорту/експорту залишаються з попередньої версії)
-function downloadFile(filename, data) {
-    const element = document.createElement('a');
-    element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(data));
-    element.setAttribute('download', filename);
-    element.style.display = 'none';
-    document.body.appendChild(element);
-    element.click();
-    document.body.removeChild(element);
-}
-
-document.getElementById('export-json').addEventListener('click', () => {
-    downloadFile('fixiki_crm_export.json', JSON.stringify(state, null, 2));
-    showNotification('Дані експортовано у JSON.');
+/* start login UI */
+renderUserList();
+document.getElementById('login-btn').addEventListener('click', ()=> {
+  const uid = document.getElementById('login-user').value;
+  const pin = document.getElementById('login-pin').value.trim();
+  const user = state.users.find(u=>u.id===uid);
+  if(user && user.pin === hashPin(pin)){ setCurrentUser(user); document.getElementById('login-modal').classList.remove('active'); document.getElementById('app').style.display='flex'; renderAll(); show('Вхід успішний'); }
+  else show('Невірний логін/PIN', true);
 });
 
-document.getElementById('export-xlsx').addEventListener('click', () => {
-    try {
-        const workbook = XLSX.utils.book_new();
-        // Прибираємо items з orders для кращого вигляду в Excel
-        const cleanOrders = state.orders.map(o => ({
-            id: o.id,
-            clientId: o.clientId,
-            car: o.car,
-            total: o.total,
-            status: o.status,
-            paid: o.paid,
-            created: new Date(o.created).toLocaleDateString(),
-            items_summary: o.items.map(it => `${it.name} x${it.qty}`).join('; ')
-        }));
-        
-        const dataForExport = {
-            clients: state.clients,
-            services: state.services,
-            stock: state.stock,
-            orders: cleanOrders
-        };
-
-        for (const key in dataForExport) {
-            if (Array.isArray(dataForExport[key])) {
-                const ws = XLSX.utils.json_to_sheet(dataForExport[key]);
-                XLSX.utils.book_append_sheet(workbook, ws, key.charAt(0).toUpperCase() + key.slice(1));
-            }
-        }
-        XLSX.writeFile(workbook, "fixiki_crm_export.xlsx");
-        showNotification('Дані експортовано у XLSX.');
-    } catch (e) {
-        showNotification('Помилка експорту XLSX. Можливо, SheetJS не завантажився.', true);
-        console.error(e);
-    }
-});
-
-document.getElementById('import-file').addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-        try {
-            const importedState = JSON.parse(event.target.result);
-            if (importedState.clients && importedState.orders) {
-                state = importedState;
-                saveState();
-                showNotification('Дані успішно імпортовано!');
-            } else {
-                showNotification('Некоректний формат JSON для CRM.', true);
-            }
-        } catch (error) {
-            showNotification('Помилка читання або парсингу файлу.', true);
-        }
-    };
-    reader.readAsText(file);
-});
-
-document.getElementById('clear-all').addEventListener('click', () => {
-    if (confirm('Увага! Усі локальні дані будуть ОЧИЩЕНІ без можливості відновлення. Продовжити?')) {
-        localStorage.removeItem(LS_KEY);
-        location.reload(); 
-    }
-});
-
-document.getElementById('btn-reset-demo').addEventListener('click', () => {
-    if (confirm('Ви впевнені? Усі ваші локальні дані будуть видалені та замінені демо-даними.')) {
-        seedDemo();
-        showNotification('Демо-дані відновлено.');
-    }
-});
-
-
-/* ---------- Centralized Action Handler ---------- */
-document.body.addEventListener('click', (e) => {
-    const target = e.target.closest('[data-action]');
-    if (!target) return;
-
-    const action = target.dataset.action;
-    const id = target.dataset.id;
-    const clientId = target.dataset.clientId;
-
-    // Клієнти
-    if (action === 'edit-client') openClientModal(id);
-    else if (action === 'del-client') deleteClient(id);
-    else if (action === 'new-order') openOrderModal(clientId);
-    
-    // Послуги
-    else if (action === 'edit-service') openServiceModal(id);
-    else if (action === 'del-service') deleteService(id);
-
-    // Склад
-    else if (action === 'edit-stock') openStockModal(id);
-    else if (action === 'consume-stock') consumeStock(id);
-    
-    // Наряди/Оплати
-    else if (action === 'view-order') openViewOrderModal(id);
-    else if (action === 'edit-order-from-view') { closeModal(); openOrderModal(id); } // Перехід з перегляду до редагування
-    else if (action === 'delete-order') deleteOrder(id);
-    else if (action === 'pay') markOrderPaid(id);
-});
-
-function markOrderPaid(id) {
-    const order = findOrder(id);
-    if (order) {
-        order.paid = true;
-        saveState();
-        showNotification(`Наряд ${order.id.substring(0,6)}... позначено як оплачений.`);
-    }
-}
-
-
-/* ---------- Global Buttons ---------- */
-document.getElementById('btn-add-client').addEventListener('click', () => openClientModal());
-document.getElementById('btn-add-order').addEventListener('click', () => openOrderModal());
-document.getElementById('btn-add-service').addEventListener('click', () => openServiceModal());
-document.getElementById('btn-add-stock').addEventListener('click', () => openStockModal());
-
-/* ---------- Search Logic ---------- */
-searchInput.addEventListener('input', () => {
-    const currentView = document.querySelector('.menu button.active').dataset.view;
-    const query = searchInput.value.trim();
-    if (currentView === 'clients') {
-        renderClients(query);
-    } else if (currentView === 'orders') {
-        renderOrders(query);
-    }
-});
-
-
-// Запуск програми
-loadState();
+/* show users in login select */
+renderUserList();
 
 </script>
+</body>
+</html>
