@@ -427,4 +427,826 @@ function renderDashboard(){
     tr.innerHTML = `<td>${o.id.substring(0,6)}...</td><td>${client?escapeHtml(client.name):'—'}</td><td>${escapeHtml(o.car||'—')}</td><td>${formatPrice(o.total)}</td><td>${o.status}</td>`;
     tbody.appendChild(tr);
   });
-  const lastOrderTime = state
+  const lastOrderTime = state.orders.length ? Math.max(...state.orders.map(o => o.created)) : null;
+  document.getElementById('last-updated').textContent = lastOrderTime ? new Date(lastOrderTime).toLocaleString() : '—';
+}
+
+/* Clients */
+function renderClients(filter=''){
+  const tbody = document.querySelector('#clients-table tbody');
+  tbody.innerHTML = '';
+  const q = (filter || searchInput.value || '').toLowerCase();
+  const list = state.clients.filter(c=> !q || (c.name+c.phone+c.car).toLowerCase().includes(q));
+  document.getElementById('clients-count').textContent = list.length;
+  list.forEach(c=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${escapeHtml(c.name)}</td><td class="small">${escapeHtml(c.phone)}</td><td class="small">${escapeHtml(c.car||'—')}</td><td class="small">${escapeHtml(c.note||'')}</td>
+      <td>
+        <div style="display:flex;gap:6px">
+          <button class="btn ghost" data-action="edit-client" data-id="${c.id}">Редагувати</button>
+          <button class="btn ghost" data-action="new-order" data-client-id="${c.id}">Наряд</button>
+          <button class="btn secondary" data-action="del-client" data-id="${c.id}">Видалити</button>
+        </div>
+      </td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+/* Orders */
+function renderOrders(filter=''){
+  const tbody = document.querySelector('#orders-table tbody');
+  tbody.innerHTML = '';
+  const q = (filter || searchInput.value || '').toLowerCase();
+  const list = state.orders.slice().sort((a,b)=>b.created - a.created).filter(o=> {
+    const client = findClient(o.clientId);
+    const clientInfo = client ? client.name + client.phone : '';
+    const orderInfo = o.car + o.status;
+    return !q || (clientInfo + orderInfo + o.id).toLowerCase().includes(q);
+  });
+  
+  list.forEach((o)=>{ 
+    const client = findClient(o.clientId);
+    const itemsHtml = (o.items || []).map(it=>{
+      const name = it.name || (it.type === 'service' ? findService(it.id)?.name : findStock(it.id)?.name) || (it.type === 'service' ? 'послуга' : 'запчастина');
+      return `${name} x${it.qty}`;
+    }).join(', ');
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${o.id.substring(0,6)}...</td><td>${client?escapeHtml(client.name):'—'}</td><td>${escapeHtml(o.car||'—')}</td><td class="small">${itemsHtml || '—'}</td>
+      <td>${formatPrice(o.total)}</td><td>${o.status}${o.paid? ' • <span class="tag-paid">Оплачено</span>':' • <span class="tag-unpaid">Не оплачено</span>'}</td>
+      <td>
+        <div style="display:flex;gap:6px">
+          <button class="btn ghost" data-action="view-order" data-id="${o.id}">Відкрити</button>
+          <button class="btn secondary" data-action="delete-order" data-id="${o.id}">Видалити</button>
+        </div>
+      </td>`;
+    tbody.appendChild(tr);
+  });
+  document.getElementById('orders-count').textContent = state.orders.length;
+}
+
+/* Services */
+function renderServices(){
+  const tbody = document.querySelector('#services-table tbody');
+  tbody.innerHTML = '';
+  state.services.forEach(s=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${escapeHtml(s.name)}</td><td>${formatPrice(s.price)}</td><td>
+      <div style="display:flex;gap:6px">
+        <button class="btn ghost" data-action="edit-service" data-id="${s.id}">Ред.</button>
+        <button class="btn secondary" data-action="del-service" data-id="${s.id}">Видалити</button>
+      </div></td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+/* Stock */
+function renderStock(){
+  const tbody = document.querySelector('#stock-table tbody');
+  tbody.innerHTML = '';
+  state.stock.forEach(p=>{
+    const isLow = p.qty < p.min;
+    const rowClass = isLow ? 'style="background:rgba(243, 156, 18, 0.1);"' : '';
+    const tag = isLow ? '<span class="tag-low-stock">Низький</span>' : '';
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td ${rowClass}>${escapeHtml(p.name)}</td><td>${p.qty} ${tag}</td><td>${p.min}</td><td>${formatPrice(p.price)}</td>
+      <td>
+        <div style="display:flex;gap:6px">
+          <button class="btn ghost" data-action="edit-stock" data-id="${p.id}">Ред.</button>
+          <button class="btn secondary" data-action="consume-stock" data-id="${p.id}">Списати</button>
+        </div>
+      </td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+/* Payments */function renderPayments(){
+  const tbody = document.querySelector('#payments-table tbody');
+  tbody.innerHTML = '';
+  let unpaidCount = 0;
+  state.orders.slice().sort((a,b)=>b.created - a.created).forEach(o=>{
+    if (!o.paid) unpaidCount++;
+    const client = findClient(o.clientId);
+    const paidTag = o.paid ? '<span class="tag-paid">Оплачено</span>' : '<button class="btn secondary" data-action="pay" data-id="'+o.id+'">Позначити оплату</button>';
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${o.id.substring(0,6)}...</td><td>${client?escapeHtml(client.name):'—'}</td><td>${formatPrice(o.total)}</td><td>${paidTag}</td>`;
+    tbody.appendChild(tr);
+  });
+  document.getElementById('unpaid-count').textContent = unpaidCount;
+}
+
+/* ---------- Modals Helpers ---------- */
+const modal = document.getElementById('modal');
+const modalInner = document.getElementById('modal-inner');
+
+function openModal(html){
+  modalInner.innerHTML = html;
+  modal.style.display = 'flex';
+  const closeBtn = modalInner.querySelector('[data-close]');
+  if(closeBtn) closeBtn.addEventListener('click', closeModal);
+}
+function closeModal(){ modal.style.display = 'none'; modalInner.innerHTML = ''; }
+
+/* ---------- Client CRUD Logic (omitted for brevity, assume previous version) ---------- */
+// ... (Функції saveClient, deleteClient, openClientModal залишаються з попередньої версії)
+function saveClient(id){
+    const name = document.getElementById('client-name').value.trim();
+    const phone = document.getElementById('client-phone').value.trim();
+    const car = document.getElementById('client-car').value.trim();
+    const note = document.getElementById('client-note').value.trim();
+
+    if (!name || !phone) {
+        showNotification('Ім\'я та Телефон є обов\'язковими полями!', true);
+        return;
+    }
+
+    if (id) {
+        const client = findClient(id);
+        Object.assign(client, { name, phone, car, note });
+        showNotification('Клієнта оновлено!');
+    } else {
+        state.clients.push({ id: uid('c'), name, phone, car, note, created: Date.now() });
+        showNotification('Клієнта додано!');
+    }
+    closeModal();
+    saveState();
+    switchView('clients');
+}
+
+function deleteClient(id) {
+    if (confirm("Ви впевнені, що хочете видалити цього клієнта? Усі пов'язані наряди залишаться.")) {
+        state.clients = state.clients.filter(c => c.id !== id);
+        state.orders.filter(o => o.clientId === id).forEach(o => o.clientId = null);
+        saveState();
+        showNotification('Клієнта видалено.');
+    }
+}
+
+function openClientModal(clientId = null) {
+  const isEdit = !!clientId;
+  const client = isEdit ? findClient(clientId) : {};
+
+  const html = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px">
+      <strong>${isEdit ? 'Редагувати клієнта' : 'Додати клієнта'}</strong>
+      <button data-close class="btn ghost secondary">Закрити</button>
+    </div>
+    <div class="flex-col">
+      <div class="form-grid">
+        <input id="client-name" placeholder="Ім'я*" value="${escapeHtml(client.name || '')}" required>
+        <input id="client-phone" placeholder="Телефон*" value="${escapeHtml(client.phone || '')}" required>
+        <input id="client-car" placeholder="Авто (марка/номер)" value="${escapeHtml(client.car || '')}">
+      </div>
+      <textarea id="client-note" placeholder="Нотатки" style="width:100%;min-height:80px">${escapeHtml(client.note || '')}</textarea>
+      <button id="save-client" class="btn">${isEdit ? 'Зберегти зміни' : 'Додати клієнта'}</button>
+    </div>
+  `;
+  openModal(html);
+  document.getElementById('save-client').addEventListener('click', () => saveClient(clientId));
+}
+
+/* ---------- Service & Stock CRUD Logic (omitted for brevity, assume previous version) ---------- */
+// ... (Функції saveService, deleteService, openServiceModal, saveStock, deleteStock, openStockModal, consumeStock залишаються з попередньої версії)
+function saveService(id){
+    const name = document.getElementById('service-name').value.trim();
+    const price = Number(document.getElementById('service-price').value.trim());
+
+    if (!name || isNaN(price) || price <= 0) {
+        showNotification('Перевірте Назву та Ціну!', true);
+        return;
+    }
+
+    if (id) {
+        constservice = findService(id);
+        Object.assign(service, { name, price });
+        showNotification('Послугу оновлено!');
+    } else {
+        state.services.push({ id: uid('s'), name, price });
+        showNotification('Послугу додано!');
+    }
+    closeModal();
+    saveState();
+    switchView('services');
+}
+
+function deleteService(id) {
+    if (confirm("Ви впевнені, що хочете видалити цю послугу?")) {
+        state.services = state.services.filter(s => s.id !== id);
+        saveState();
+        showNotification('Послугу видалено.');
+    }
+}
+
+function openServiceModal(serviceId = null) {
+  const isEdit = !!serviceId;
+  const service = isEdit ? findService(serviceId) : {};
+
+  const html = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px">
+      <strong>${isEdit ? 'Редагувати послугу' : 'Додати послугу'}</strong>
+      <button data-close class="btn ghost secondary">Закрити</button>
+    </div>
+    <div class="flex-col">
+      <div class="form-grid" style="grid-template-columns: 2fr 1fr;">
+        <input id="service-name" placeholder="Назва послуги*" value="${escapeHtml(service.name || '')}" required>
+        <input id="service-price" type="number" step="0.01" placeholder="Ціна (₴)*" value="${service.price || ''}" required>
+      </div>
+      <button id="save-service" class="btn">${isEdit ? 'Зберегти зміни' : 'Додати послугу'}</button>
+    </div>
+  `;
+  openModal(html);
+  document.getElementById('save-service').addEventListener('click', () => saveService(serviceId));
+}
+
+function saveStock(id){
+    const name = document.getElementById('stock-name').value.trim();
+    const qty = Number(document.getElementById('stock-qty').value.trim());
+    const min = Number(document.getElementById('stock-min').value.trim());
+    const price = Number(document.getElementById('stock-price').value.trim());
+
+    if (!name || isNaN(qty) || isNaN(min) || isNaN(price) || price <= 0) {
+        showNotification('Перевірте всі поля: Назва, Кількість, Мінімум, Ціна!', true);
+        return;
+    }
+
+    if (id) {
+        const item = findStock(id);
+        Object.assign(item, { name, qty, min, price });
+        showNotification('Товар оновлено!');
+    } else {
+        state.stock.push({ id: uid('p'), name, qty, min, price });
+        showNotification('Товар додано на склад!');
+    }
+    closeModal();
+    saveState();
+    switchView('stock');
+}
+
+function deleteStock(id) {
+    if (confirm("Ви впевнені, що хочете видалити цей товар зі складу?")) {
+        state.stock = state.stock.filter(p => p.id !== id);
+        saveState();
+        showNotification('Товар видалено.');
+    }
+}
+
+function openStockModal(stockId = null) {
+  const isEdit = !!stockId;
+  const item = isEdit ? findStock(stockId) : {};
+
+  const html = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px">
+      <strong>${isEdit ? 'Редагувати товар' : 'Додати товар на склад'}</strong>
+      <button data-close class="btn ghost secondary">Закрити</button>
+    </div>
+    <div class="flex-col">
+      <input id="stock-name" placeholder="Назва товару*" value="${escapeHtml(item.name || '')}" required>
+      <div class="form-grid" style="grid-template-columns: 1fr 1fr 1fr;">
+        <input id="stock-qty" type="number" placeholder="Кількість*" value="${item.qty || 0}" required>
+        <input id="stock-min" type="number" placeholder="Мінімум*" value="${item.min || 1}" required>
+        <input id="stock-price" type="number" step="0.01" placeholder="Ціна продажу (₴)*" value="${item.price || ''}" required>
+      </div>
+      <button id="save-stock" class="btn">${isEdit ? 'Зберегти зміни' : 'Додати товар'}</button>
+    </div>
+  `;
+  openModal(html);
+  document.getElementById('save-stock').addEventListener('click', () => saveStock(stockId));
+}
+
+function consumeStock(id) {
+    const item = findStock(id);
+    if (!item) return;
+    
+    const qtyToConsume = prompt(`Списати скільки одиниць товару "${item.name}" (Зараз: ${item.qty})?`);
+    const num = Number(qtyToConsume);
+    
+    if (num > 0 && num <= item.qty) {
+        item.qty -= num;
+        saveState();
+        showNotification(`Списано ${num} од. ${item.name}. Залишок: ${item.qty}`);
+    } else if (qtyToConsume !== null) {
+        showNotification('Некоректна кількість списання або перевищує залишок.', true);
+    }
+}
+
+
+/* ---------- CORE ORDER LOGIC ---------- */
+
+/**
+ * Списує/повертає товари зі складу
+ * @param {object} order - Об'єкт наряду
+ * @param {boolean} shouldSpend - true: списати, false: повернути
+ */
+function updateStockFromOrder(order, shouldSpend) {
+    let changed = false;
+    order.items.filter(item => item.type === 'stock').forEach(item => {
+        const stockItem = findStock(item.id);
+        if (stockItem) {
+            if (shouldSpend && !item.spended) {
+                stockItem.qty -= item.qty;
+                item.spended = true;
+                changed = true;
+            } else if (!shouldSpend && item.spended) {
+                stockItem.qty += item.qty;
+                item.spended = false;
+                changed = true;
+            }
+        }
+    });
+    if (changed) {
+        order.spended = shouldSpend;
+        return true;
+    }
+    return false;
+}
+
+/**
+ * Розрахунок загальної суми наряду
+ * @param {Array} items - Масив позицій наряду
+ * @returns {number} Загальна сума
+ */
+function calculateTotal(items) {
+    return items.reduce((sum, item) => sum + (item.qty * item.price), 0);
+}
+
+/**
+ * Зберігає (створює або оновлює) наряд
+ * @param {string} orderId - ID наряду або null для створення
+ */
+function saveOrder(orderId = null) {
+    const clientId = document.getElementById('order-client-id').value;
+    const car = document.getElementById('order-car').value.trim();
+    const status = document.getElementById('order-status').value;
+    const items = [];
+    
+    if (!clientId) {
+        showNotification('Будь ласка, виберіть клієнта!', true);
+        return;
+    }
+
+    // Збір позицій з форми
+    document.querySelectorAll('.order-item-row').forEach(row => {
+        const type = row.querySelector('.item-type').value;
+        const id = row.querySelector('.item-id').value;
+        const qty = Number(row.querySelector('.item-qty').value);
+        const price = Number(row.querySelector('.item-price').value);
+
+        if (id && qty > 0 && price >= 0) {
+            let name = '';
+            if (type === 'service') name = findService(id)?.name;
+            else if (type === 'stock') name = findStock(id)?.name;
+
+            items.push({
+                type: type,
+                id: id,
+                qty: qty,
+                price: price,
+                name: name || 'Невідома позиція', // Зберігаємо ім'я на момент створення
+                spended: row.dataset.spended === 'true' // Передаємо статус списання
+            });
+        }
+    });
+
+    if (items.length === 0) {
+        showNotification('Наряд має містити хоча б одну позицію!', true);
+        return;
+    }
+
+    const total = calculateTotal(items);
+    let isNew = !orderId;
+    let order;
+
+    if (orderId) {
+        order = findOrder(orderId);
+        if (!order) return;
+        
+        // Перевіряємо, чи був змінений статус на "виконано"
+        const statusChangedToCompleted = order.status !== 'виконано' && status === 'виконано';
+        const statusChangedFromCompleted = order.status === 'виконано' && status !== 'виконано';
+
+        // Оновлення полів
+        Object.assign(order, { clientId, car, status, items, total });
+
+        // Логіка списання запасів
+        if (statusChangedToCompleted) {
+            if (updateStockFromOrder(order, true)) {
+                showNotification(`Запаси для наряду ${orderId.substring(0,6)}... списано зі складу!`);
+            }
+        } else if (statusChangedFromCompleted) {
+            if (updateStockFromOrder(order, false)) {
+                showNotification(`Запаси для наряду ${orderId.substring(0,6)}... повернуто на склад!`);
+            }
+        }
+
+        showNotification('Наряд оновлено!');
+    } else {
+        order = {
+            id: uid('o'),
+            clientId,
+            car,
+            items,
+            total,
+            status,
+            created: Date.now(),
+            paid: false,
+            spended: false
+        };
+        state.orders.push(order);
+        
+        // Якщо новий наряд відразу "виконано" - списати
+        if (status === 'виконано') {
+            updateStockFromOrder(order, true);
+        }
+        showNotification('Новий наряд створено!');
+    }
+
+    closeModal();
+    saveState();
+    switchView('orders');
+}
+
+function deleteOrder(id) {
+    if (confirm("Ви впевнені, що хочете видалити цей наряд? Якщо він мав статус 'виконано', запаси можуть не повернутися на склад.")) {
+        state.orders = state.orders.filter(o => o.id !== id);
+        showNotification('Наряд видалено.');
+        saveState();
+    }
+}
+
+functiongetOrderRowHtml(item, index, isEditMode = true) {
+    const isService = item.type === 'service';
+    const sourceList = isService ? state.services : state.stock;
+    const selectedItem = sourceList.find(i => i.id === item.id);
+    
+    // Встановлюємо ціну з наряду (вона може відрізнятися від поточної ціни в словнику)
+    const priceValue = item.price || selectedItem?.price || 0;
+    
+    const rowClass = isService ? 'style="background:rgba(47,156,255,0.05)"' : 'style="background:rgba(255,255,255,0.03)"';
+
+    const itemSelect = sourceList.map(i => `<option value="${i.id}" ${i.id === item.id ? 'selected' : ''}>${escapeHtml(i.name)} (${formatPrice(i.price)})</option>`).join('');
+
+    const deleteBtn = isEditMode ? `<button class="btn secondary danger small" data-action="remove-item" data-index="${index}" style="padding:6px 8px;">X</button>` : '';
+
+    return `
+        <tr class="order-item-row" data-index="${index}" ${rowClass} data-spended="${item.spended}">
+            <td><input type="hidden" class="item-type" value="${item.type}">${isService ? 'Послуга' : 'Товар'}</td>
+            <td>
+                <select class="item-id" data-type="${item.type}" required ${isEditMode ? '' : 'disabled'}>
+                    <option value="">— Виберіть —</option>
+                    ${itemSelect}
+                </select>
+            </td>
+            <td><input type="number" class="item-qty" value="${item.qty}" min="1" required ${isEditMode ? '' : 'disabled'}></td>
+            <td><input type="number" step="0.01" class="item-price" value="${priceValue}" required ${isEditMode ? '' : 'disabled'}></td>
+            <td><span class="item-subtotal">${formatPrice(item.qty * priceValue)}</span></td>
+            <td>${deleteBtn}</td>
+        </tr>
+    `;
+}
+
+function openOrderModal(orderId = null) {
+    const isEdit = !!orderId;
+    const order = isEdit ? findOrder(orderId) : {
+        id: uid('o'), clientId: null, car: '', items: [], total: 0, status: 'в роботі', created: Date.now(), paid: false, spended: false
+    };
+
+    const client = order.clientId ? findClient(order.clientId) : null;
+    let currentCar = order.car || client?.car || '';
+
+    const html = `
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px">
+          <strong>${isEdit ? `Наряд № ${order.id.substring(0,8)}...` : 'Новий Наряд-замовлення'}</strong>
+          <button data-close class="btn ghost secondary">Закрити</button>
+        </div>
+        
+        <div class="card" style="margin-bottom:15px">
+            <div class="form-grid">
+                <select id="order-client-id" required>
+                    <option value="" disabled ${!order.clientId ? 'selected' : ''}>— Виберіть клієнта —</option>
+                    ${state.clients.map(c => `<option value="${c.id}" ${c.id === order.clientId ? 'selected' : ''}>${escapeHtml(c.name)} (${escapeHtml(c.car || '—')})</option>`).join('')}
+                </select>
+                <input id="order-car" placeholder="Авто (марка/номер)" value="${escapeHtml(currentCar)}">
+                <select id="order-status">
+                    ${ORDER_STATUSES.map(s => `<option value="${s}" ${s === order.status ? 'selected' : ''}>${s.charAt(0).toUpperCase() + s.slice(1)}</option>`).join('')}
+                </select>
+                <select id="order-paid" ${order.paid ? 'style="border-color:var(--success)"' : ''}>
+                    <option value="false" ${!order.paid ? 'selected' : ''}>Не оплачено</option>
+                    <option value="true" ${order.paid ? 'selected' : ''}>Оплачено</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="card" style="margin-bottom:15px">
+            <strong>Позиції Наряду</strong>
+            <table class="table" id="order-items-table" style="margin-top:8px">
+                <thead><tr><th>Тип</th><th>Назва</th><th>Кіл-ть</th><th>Ціна за од.</th><th>Сума</th><th></th></tr></thead>
+                <tbody id="order-items-tbody">
+                    ${order.items.map((item, index) => getOrderRowHtml(item, index, true)).join('')}
+                </tbody>
+            </table>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:15px">
+                <div>
+                    <button id="add-service-item" class="btn secondary small" style="padding:6px 10px;">+ Послуга</button>
+                    <button id="add-stock-item" class="btn secondary small" style="padding:6px 10px;">+ Товар</button>
+                </div>
+                <strong>Загальна Сума: <span id="order-total">${formatPrice(order.total)}</span></strong>
+            </div>
+        </div>
+        
+        <button id="save-order-btn" class="btn" style="width:100%">${isEdit ? 'Зберегти зміни' : 'Створити Наряд'}</button>
+    `;
+    openModal(html);
+    
+    // Прив'язка логіки
+    document.getElementById('save-order-btn').addEventListener('click', () => saveOrder(orderId));
+    document.getElementById('add-service-item').addEventListener('click', () => addItemToOrder('service'));
+    document.getElementById('add-stock-item').addEventListener('click', () => addItemToOrder('stock'));
+    document.getElementById('order-client-id').addEventListener('change', updateCarField);
+    document.getElementById('order-paid').addEventListener('change', updatePaidStatus);
+
+    // Делегування подій для динамічних полів (Qty, Price, Select)
+    const tbody = document.getElementById('order-items-tbody');
+    tbody.addEventListener('input', handleItemChange);
+    tbody.addEventListener('click', handleItemAction);
+
+    // Початковий розрахунок
+    updateOrderTotalDisplay();
+}
+
+function updatePaidStatus(e) {
+    const isPaid = e.target.value === 'true';
+    e.target.style.borderColor = isPaid ? 'var(--success)' : '';
+}
+
+function updateCarField(e) {
+    const clientId = e.target.value;
+    const client = findClient(clientId);
+    document.getElementById('order-car').value = client?.car || '';
+}
+
+function addItemToOrder(type) {
+    const tbody = document.getElementById('order-items-tbody');
+    const newIndex = tbody.children.length; // Використовуємо довжину як індекс
+    const newItem = {
+        type: type,
+        id: '',
+        qty: 1,
+        price: 0,
+        name: '',
+        spended: false
+    };
+    tbody.insertAdjacentHTML('beforeend', getOrderRowHtml(newItem, newIndex, true));
+}
+
+function updateItemPriceAndSubtotal(row) {
+    const type = row.querySelector('.item-type').value;
+    const id = row.querySelector('.item-id').value;
+    const qty = Number(row.querySelector('.item-qty').value);
+    
+    let priceInput = row.querySelector('.item-price');
+    let currentPrice = Number(priceInput.value);
+
+    // Якщо змінено Select, оновлюємо ціну за замовчуванням
+    if (event.target.classList.contains('item-id') || (currentPrice === 0 && id)) {
+        let defaultPrice = 0;
+        if (type === 'service') {
+            defaultPrice = findService(id)?.price || 0;
+        } else if (type === 'stock') {
+            defaultPrice = findStock(id)?.price || 0;
+        }
+        priceInput.value = defaultPrice.toFixed(2);
+        currentPrice = defaultPrice;
+    }
+
+    const subtotal = qty * currentPrice;
+    row.querySelector('.item-subtotal').textContent = formatPrice(subtotal);
+    updateOrderTotalDisplay();
+}
+
+function handleItemChange(e) {
+    const row = e.target.closest('.order-item-row');
+    if (row && (e.target.classList.contains('item-id') || e.target.classList.contains('item-qty') || e.target.classList.contains('item-price'))) {
+        updateItemPriceAndSubtotal(row);
+    }
+}
+
+function handleItemAction(e) {
+    const btn = e.target.closest('[data-action="remove-item"]');
+    if (btn) {
+        e.preventDefault();
+        const row = btn.closest('.order-item-row');
+        if (row) {
+            row.remove();
+            updateOrderTotalDisplay();
+        }
+    }
+}
+
+function updateOrderTotalDisplay() {
+    let total = 0;
+    document.querySelectorAll('.order-item-row').forEach(row => {
+        const qty = Number(row.querySelector('.item-qty').value);
+        const price = Number(row.querySelector('.item-price').value);
+        if (!isNaN(qty) && !isNaN(price)) {
+            total += qty * price;
+        }
+    });
+    document.getElementById('order-total').textContent = formatPrice(total);
+}
+
+// Вид тільки для перегляду (View Order)
+function openViewOrderModal(orderId) {
+    const order = findOrder(orderId);
+    if (!order) return;
+
+    const client = findClient(order.clientId);
+    const orderDate = new Date(order.created).toLocaleString();
+    const paidText = order.paid ? `<span class="tag-paid">Оплачено</span>` : `<span class="tag-unpaid">Не оплачено</span>`;
+
+    const html = `
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px">
+            <strong>Наряд № ${order.id.substring(0,8)}... (від ${orderDate})</strong>
+            <div>
+                <button class="btn ghost" data-action="edit-order-from-view" data-id="${orderId}">Редагувати</button>
+                <button data-close class="btn secondary">Закрити</button>
+            </div>
+        </div>
+        
+        <div class="card" style="margin-bottom:15px">
+            <div class="form-grid" style="grid-template-columns: 1fr 1fr 1fr 1fr;">
+                <div class="flex-col"><strong>Клієнт:</strong> <span class="muted">${escapeHtml(client?.name || '—')}</span></div>
+                <div class="flex-col"><strong>Авто:</strong> <span class="muted">${escapeHtml(order.car || '—')}</span></div>
+                <div class="flex-col"><strong>Статус:</strong> <span class="muted">${order.status.charAt(0).toUpperCase() + order.status.slice(1)}</span></div>
+                <div class="flex-col"><strong>Оплата:</strong> ${paidText}</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <strong>Позиції Наряду</strong>
+            <table class="table" style="margin-top:8px">
+                <thead><tr><th>Тип</th><th>Назва</th><th>Кіл-ть</th><th>Ціна за од.</th><th>Сума</th></tr></thead>
+                <tbody>
+                    ${order.items.map((item) => getOrderRowHtml(item, 0, false)).join('')}
+                </tbody>
+            </table>
+            <div style="text-align:right; margin-top:15px">
+                <strong style="font-size:1.2em">ЗАГАЛОМ: ${formatPrice(order.total)}</strong>
+            </div>
+        </div>
+    `;
+    openModal(html);
+}
+
+
+/* ---------- Data Import/Export Logic (omitted for brevity, assume previous version) ---------- */
+// ... (Функції для імпорту/Export Logic (omitted for brevity, assume previous version) ---------- */
+// ... (Функції для імпорту/експорту залишаються з попередньої версії)
+function downloadFile(filename, data) {
+    const element = document.createElement('a');
+    element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(data));
+    element.setAttribute('download', filename);
+    element.style.display = 'none';
+    document.body.appendChild(element);
+    element.click();
+    document.body.removeChild(element);
+}
+
+document.getElementById('export-json').addEventListener('click', () => {
+    downloadFile('fixiki_crm_export.json', JSON.stringify(state, null, 2));
+    showNotification('Дані експортовано у JSON.');
+});
+
+document.getElementById('export-xlsx').addEventListener('click', () => {
+    try {
+        const workbook = XLSX.utils.book_new();
+        // Прибираємо items з orders для кращого вигляду в Excel
+        const cleanOrders = state.orders.map(o => ({
+            id: o.id,
+            clientId: o.clientId,
+            car: o.car,
+            total: o.total,
+            status: o.status,
+            paid: o.paid,
+            created: new Date(o.created).toLocaleDateString(),
+            items_summary: o.items.map(it => `${it.name} x${it.qty}`).join('; ')
+        }));
+        
+        const dataForExport = {
+            clients: state.clients,
+            services: state.services,
+            stock: state.stock,
+            orders: cleanOrders
+        };
+
+        for (const key in dataForExport) {
+            if (Array.isArray(dataForExport[key])) {
+                const ws = XLSX.utils.json_to_sheet(dataForExport[key]);
+                XLSX.utils.book_append_sheet(workbook, ws, key.charAt(0).toUpperCase() + key.slice(1));
+            }
+        }
+        XLSX.writeFile(workbook, "fixiki_crm_export.xlsx");
+        showNotification('Дані експортовано у XLSX.');
+    } catch (e) {
+        showNotification('Помилка експорту XLSX. Можливо, SheetJS не завантажився.', true);
+        console.error(e);
+    }
+});
+
+document.getElementById('import-file').addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+        try {
+            const importedState = JSON.parse(event.target.result);
+            if (importedState.clients && importedState.orders) {
+                state = importedState;
+                saveState();
+                showNotification('Дані успішно імпортовано!');
+            } else {
+                showNotification('Некоректний формат JSON для CRM.', true);
+            }
+        } catch (error) {
+            showNotification('Помилка читання або парсингу файлу.', true);
+        }
+    };
+    reader.readAsText(file);
+});
+
+document.getElementById('clear-all').addEventListener('click', () => {
+    if (confirm('Увага! Усі локальні дані будуть ОЧИЩЕНІ без можливості відновлення. Продовжити?')) {
+        localStorage.removeItem(LS_KEY);
+        location.reload(); 
+    }
+});
+
+document.getElementById('btn-reset-demo').addEventListener('click', () => {
+    if (confirm('Ви впевнені? Усі ваші локальні дані будуть видалені та замінені демо-даними.')) {
+        seedDemo();
+        showNotification('Демо-дані відновлено.');
+    }
+});
+
+
+/* ---------- Centralized Action Handler ---------- */
+document.body.addEventListener('click', (e) => {
+    const target = e.target.closest('[data-action]');
+    if (!target) return;
+
+    const action = target.dataset.action;
+    const id = target.dataset.id;
+    const clientId = target.dataset.clientId;
+
+    // Клієнти
+    if (action === 'edit-client') openClientModal(id);
+    else if (action === 'del-client') deleteClient(id);
+    else if (action === 'new-order') openOrderModal(clientId);
+    
+    // Послуги
+    else if (action === 'edit-service') openServiceModal(id);
+    else if (action === 'del-service') deleteService(id);
+
+    // Склад
+    else if (action === 'edit-stock') openStockModal(id);
+    else if (action === 'consume-stock') consumeStock(id);
+    
+    // Наряди/Оплати
+    else if (action === 'view-order') openViewOrderModal(id);
+    else if (action === 'edit-order-from-view') { closeModal(); openOrderModal(id); } // Перехід з перегляду до редагування
+    else if (action === 'delete-order') deleteOrder(id);
+    else if (action === 'pay') markOrderPaid(id);
+});
+
+function markOrderPaid(id) {
+    const order = findOrder(id);
+    if (order) {
+        order.paid = true;
+        saveState();
+        showNotification(`Наряд ${order.id.substring(0,6)}... позначено як оплачений.`);
+    }
+}
+
+
+/* ---------- Global Buttons ---------- */
+document.getElementById('btn-add-client').addEventListener('click', () => openClientModal());
+document.getElementById('btn-add-order').addEventListener('click', () => openOrderModal());
+document.getElementById('btn-add-service').addEventListener('click', () => openServiceModal());
+document.getElementById('btn-add-stock').addEventListener('click', () => openStockModal());
+
+/* ---------- Search Logic ---------- */
+searchInput.addEventListener('input', () => {
+    const currentView = document.querySelector('.menu button.active').dataset.view;
+    const query = searchInput.value.trim();
+    if (currentView === 'clients') {
+        renderClients(query);
+    } else if (currentView === 'orders') {
+        renderOrders(query);
+    }
+});
+
+
+// Запуск програми
+loadState();
+
+</script>
