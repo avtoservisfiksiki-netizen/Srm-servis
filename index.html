@@ -2,563 +2,368 @@
 <html lang="uk">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>СТО Фіксики — CRM PWA v3.1</title>
-<meta name="theme-color" content="#0e1518">
-<link rel="manifest" href="manifest.json">
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>СТО Фіксики — CRM v2</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#06080a;--panel:#0e1518;--muted:#94a3b8;--accent:#2f9cff;--card:#0b1114;--success:#2ecc71;--danger:#ff6b6b}
-*{box-sizing:border-box;font-family:Inter, Roboto, Arial, sans-serif}
-html,body{height:100%}
-body{margin:0;background:linear-gradient(180deg,var(--bg),#041018);color:#e6eef5;min-height:100vh}
-.app{display:flex;min-height:100vh}
-.sidebar{width:260px;background:linear-gradient(180deg,var(--panel),#081011);padding:18px;display:flex;flex-direction:column;gap:14px;flex-shrink:0}
-.brand{font-weight:800;font-size:20px;text-align:center}
-.menu button{display:flex;align-items:center;gap:12px;width:100%;padding:10px;border-radius:10px;border:0;background:transparent;color:var(--muted);cursor:pointer}
-.menu button.active{background:linear-gradient(90deg,rgba(47,156,255,0.12),rgba(47,156,255,0.06));color:var(--accent);font-weight:600}
-.main{flex:1;padding:16px;overflow:auto;height:100vh}
-.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:8px;flex-wrap:wrap}
-h1{margin:0;font-size:20px;font-weight:700}
-.card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); padding:14px;border-radius:12px;box-shadow:0 4px 10px rgba(0,0,0,0.2)}
-.table{width:100%;border-collapse:collapse;margin-top:12px}
-.table th, .table td{padding:10px;text-align:left;border-bottom:1px solid rgba(255,255,255,0.03);font-size:14px}
-input,textarea,select{background:var(--card);border:1px solid rgba(255,255,255,0.06);color:inherit;padding:8px;border-radius:8px}
-.btn{padding:8px 12px;border-radius:10px;border:0;background:var(--accent);color:#061017;cursor:pointer;font-weight:600}
-.btn.secondary{background:var(--panel);border:1px solid rgba(255,255,255,0.06);color:var(--muted)}
-.small{font-size:13px;color:var(--muted)}
-.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);align-items:center;justify-content:center;padding:20px;z-index:1200}
+:root{
+  --bg:#081216; --panel:#0f1a1f; --muted:#9fb0bf; --accent:#00bcd4;
+  --card:#071014; --glass: rgba(255,255,255,0.02);
+  --success:#2ecc71; --danger:#ff6b6b; --warn:#f39c12;
+  --maxw:1200px;
+}
+*{box-sizing:border-box;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,'Helvetica Neue',Arial;}
+html,body{height:100%;margin:0;background:linear-gradient(180deg,var(--bg),#041018);color:#eaf6fb}
+.container{max-width:var(--maxw);margin:18px auto;padding:12px}
+.app{display:flex;gap:14px}
+.sidebar{
+  width:260px;background:linear-gradient(180deg,var(--panel),#091317);border-radius:12px;padding:14px;flex-shrink:0;
+  display:flex;flex-direction:column;height:calc(100vh - 80px);position:sticky;top:18px;
+  transition:width .2s ease;
+}
+.sidebar.collapsed{width:76px}
+.brand{font-weight:800;font-size:18px;text-align:center;margin-bottom:8px}
+.user-bubble{background:var(--card);padding:8px;border-radius:10px;text-align:center;margin-bottom:12px}
+.menu{display:flex;flex-direction:column;gap:8px}
+.menu button{display:flex;align-items:center;gap:10px;padding:10px;border-radius:10px;border:0;background:transparent;color:var(--muted);cursor:pointer;text-align:left}
+.menu button.active{background:linear-gradient(90deg, rgba(0,188,212,0.08), rgba(0,188,212,0.03));color:var(--accent);font-weight:600}
+.topbar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px}
+.search{flex:1;display:flex;gap:8px;align-items:center}
+.search input{flex:1;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,0.03);background:transparent;color:inherit}
+.top-actions{display:flex;gap:8px;align-items:center}
+.btn{padding:8px 12px;border-radius:10px;border:0;background:var(--accent);color:#042;cursor:pointer;font-weight:600}
+.btn.ghost{background:transparent;border:1px solid rgba(255,255,255,0.04);color:var(--muted)}
+.main{flex:1;min-height:70vh}
+.card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); padding:14px;border-radius:12px;box-shadow:0 6px 18px rgba(0,0,0,0.4);margin-bottom:12px}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+@media(max-width:900px){ .grid{grid-template-columns:repeat(1,1fr)} .sidebar{display:none} .container{padding:8px} }
+.table{width:100%;border-collapse:collapse}
+.table th,.table td{padding:10px;border-bottom:1px solid rgba(255,255,255,0.03);text-align:left}
+.kpi{display:flex;gap:10px}
+.kpi .k{flex:1;padding:12px;border-radius:10px;background:var(--card);text-align:center}
+.small{color:var(--muted);font-size:13px}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.tag{padding:6px 10px;border-radius:999px;background:var(--glass);font-size:13px;color:var(--muted)}
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);align-items:center;justify-content:center;z-index:1200}
 .modal.active{display:flex}
-.modal-content{max-width:1000px;width:100%;background:var(--panel);padding:18px;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,0.6);overflow:auto;max-height:90vh}
-.notification{position:fixed;bottom:20px;right:20px;background:var(--success);color:#fff;padding:10px 15px;border-radius:8px;z-index:2000;opacity:0;transition:opacity .3s}
-.notification.active{opacity:1}
-.user-badge{background:rgba(255,255,255,0.03);padding:6px 8px;border-radius:8px;font-weight:700}
-.hidden{display:none}
-.assign-list{max-height:160px;overflow:auto;padding:8px;background:rgba(255,255,255,0.02);border-radius:8px}
+.modal .panel{background:linear-gradient(180deg,var(--panel),#081217);padding:16px;border-radius:12px;width:95%;max-width:900px}
+.form-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.input,select,textarea{padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.03);background:transparent;color:inherit;width:100%}
+.header-row{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px}
+.footer-note{font-size:13px;color:var(--muted);text-align:center;margin-top:8px}
+.collapser{display:flex;gap:8px;align-items:center;justify-content:center;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.03);cursor:pointer}
+
 </style>
 </head>
 <body>
-<div id="app" class="app" style="display:none">
-  <aside class="sidebar">
-    <div style="display:flex;flex-direction:column;gap:8px">
-      <div class="brand">СТО Фіксики</div>
-      <div class="small">CRM PWA • v3.1</div>
-      <div id="user-info" style="margin-top:8px"></div>
+<div class="container">
+  <div class="topbar">
+    <div style="display:flex;gap:12px;align-items:center">
+      <div id="sidebar-toggle" class="collapser">☰</div>
+      <div class="brand">СТО Фіксики • CRM v2</div>
+      <div class="small" id="welcome">Ласкаво просимо</div>
     </div>
-    <nav class="menu" style="margin-top:12px">
-      <button class="active" data-view="dashboard">🏠 Головна</button>
-      <button data-view="clients">👥 Клієнти</button>
-      <button data-view="orders">📋 Наряди</button>
-      <button data-view="stock">📦 Склад</button>
-      <button data-view="services">⚙️ Послуги</button>
-      <button data-view="users" id="users-tab">👨‍🔧 Керування майстрами</button>
-      <button data-view="settings">⚙️ Налаштування</button>
-    </nav>
-
-    <div style="margin-top:auto;display:flex;flex-direction:column;gap:8px">
-      <button id="export-json" class="btn secondary">Експорт JSON</button>
-      <button id="export-xlsx" class="btn secondary">Експорт XLSX</button>
-      <label style="display:block;text-align:center;border:1px dashed rgba(255,255,255,0.04);padding:8px;border-radius:8px;cursor:pointer" title="Імпорт JSON">
-        Імпорт JSON<input id="import-file" type="file" accept=".json" style="display:none">
-      </label>
-      <button id="logout" class="btn ghost secondary">Вийти</button>
-    </div>
-  </aside>
-
-  <main class="main">
-    <div class="header">
-      <h1 id="page-title">Головна</h1>
-      <div style="display:flex;gap:8px;align-items:center">
-        <input id="search" placeholder="Пошук..." style="min-width:220px">
-        <div id="admin-actions" class="hidden"><button id="btn-add-client" class="btn">Додати клієнта</button></div>
-        <div id="master-actions" class="hidden"><button id="btn-add-order-master" class="btn">Новий наряд</button></div>
+    <div class="search">
+      <input id="global-search" placeholder="Пошук: клієнт, авто, наряд..." />
+      <div class="top-actions">
+        <button id="backup-btn" class="btn ghost">Резервна копія (ZIP)</button>
+        <button id="export-json" class="btn ghost">Експорт JSON</button>
+        <button id="import-json" class="btn ghost">Імпорт</button>
+        <button id="btn-logout" class="btn ghost" style="display:none">Вийти</button>
       </div>
-    </div>
-
-    <div id="view-dashboard" class="view">
-      <div class="card"><strong>Вітання</strong><div class="small">Ви увійшли як <span id="role-display"></span></div></div>
-      <div class="card">
-        <div style="display:flex;gap:12px">
-          <div><strong>Клієнтів</strong><div id="stat-clients">0</div></div>
-          <div><strong>Нарядів</strong><div id="stat-orders">0</div></div>
-          <div><strong>Доход (30д)</strong><div id="stat-rev">0 ₴</div></div>
-        </div>
-      </div>
-      <div class="card"><strong>Останні зміни</strong><div id="recent-changes" class="small"></div></div>
-    </div>
-
-    <div id="view-clients" class="view hidden">
-      <div class="card"><strong>Клієнти</strong></div>
-      <div class="card">
-        <table class="table" id="clients-table">
-          <thead><tr><th>Ім'я</th><th>Телефон</th><th>Авто</th><th>Майстер</th><th>Дії</th></tr></thead>
-          <tbody></tbody>
-        </table>
-      </div>
-    </div>
-
-    <div id="view-orders" class="view hidden">
-      <div class="card"><strong>Наряди</strong></div>
-      <div class="card">
-        <table class="table" id="orders-table"><thead><tr><th>№</th><th>Клієнт</th><th>Тип</th><th>Майстер</th><th>Сума</th><th>Статус</th><th>Дії</th></tr></thead><tbody></tbody></table>
-      </div>
-    </div>
-
-    <div id="view-stock" class="view hidden">
-      <div class="card"><strong>Склад</strong></div>
-      <div class="card">
-        <table class="table" id="stock-table"><thead><tr><th>Назва</th><th>К-ть</th><th>Мін</th><th>Дії</th></tr></thead><tbody></tbody></table>
-      </div>
-    </div>
-
-    <div id="view-services" class="view hidden">
-      <div class="card"><strong>Послуги</strong></div>
-      <div class="card">
-        <table class="table" id="services-table"><thead><tr><th>Назва</th><th>Ціна</th><th>Дії</th></tr></thead><tbody></tbody></table>
-      </div>
-    </div>
-
-    <div id="view-users" class="view hidden">
-      <div class="card"><strong>Майстри та доступи</strong></div>
-      <div class="card">
-        <div style="display:flex;gap:8px;align-items:center">
-          <input id="new-user-name" placeholder="Ім'я майстра">
-          <input id="new-user-pin" placeholder="PIN (4 цифри)">
-          <button id="add-user" class="btn">Додати</button>
-        </div>
-        <div style="margin-top:12px"><strong>Список майстрів</strong>
-          <div id="users-list" class="assign-list"></div>
-        </div>
-      </div>
-    </div>
-
-    <div id="view-settings" class="view hidden">
-      <div class="card"><strong>Налаштування</strong></div>
-      <div class="card"><button id="btn-reset" class="btn secondary">Відновити демо</button></div>
-    </div>
-
-  </main>
-</div>
-
-<!-- Login modal -->
-<div id="login-modal" class="modal active"><div class="modal-content" style="max-width:420px;text-align:center">
-  <h2>Вхід у CRM — СТО Фіксики</h2>
-  <div style="display:flex;flex-direction:column;gap:8px;margin-top:10px">
-    <select id="login-user"></select>
-    <input id="login-pin" type="password" placeholder="PIN">
-    <div style="display:flex;gap:8px;justify-content:center">
-      <button id="login-btn" class="btn">Увійти</button>
-      <button id="login-demo" class="btn secondary">Демо (адмін)</button>
     </div>
   </div>
-</div></div>
 
-<!-- Modal shell -->
-<div id="modal" class="modal"><div id="modal-inner" class="modal-content"></div></div>
-<div id="toast" class="notification"></div>
+  <div class="app">
+    <aside class="sidebar" id="sidebar">
+      <div class="user-bubble">
+        <div id="user-name" style="font-weight:700">Гість</div>
+        <div class="small" id="user-role">Роль: —</div>
+      </div>
+
+      <nav class="menu" role="navigation">
+        <button class="active" data-view="dashboard">🏠 Головна</button>
+        <button data-view="clients">👥 Клієнти</button>
+        <button data-view="orders">🔧 Наряди</button>
+        <button data-view="stock">📦 Склад</button>
+        <button data-view="analytics">📊 Аналітика</button>
+        <button data-view="settings">⚙️ Налаштування</button>
+      </nav>
+
+      <div style="margin-top:auto">
+        <div class="small" style="text-align:center;margin-bottom:8px">Версія: v2 • Локально</div>
+        <div style="display:flex;gap:8px;justify-content:center">
+          <div id="collapse-hint" class="collapser">⇄</div>
+        </div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div id="view-dashboard" class="view">
+        <div class="card header-row">
+          <div>
+            <h3 style="margin:0">Огляд</h3>
+            <div class="small">Швидкий огляд ключових показників</div>
+          </div>
+          <div class="chips" id="overview-chips"></div>
+        </div>
+
+        <div class="grid">
+          <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <strong>Ключові показники</strong>
+              <div class="small" id="last-updated">—</div>
+            </div>
+            <div class="kpi" style="margin-top:10px">
+              <div class="k"><div class="small">Клієнтів</div><div id="k-clients" style="font-size:20px;font-weight:700">0</div></div>
+              <div class="k"><div class="small">Активні наряди</div><div id="k-open" style="font-size:20px;font-weight:700">0</div></div>
+              <div class="k"><div class="small">На складі (позицій)</div><div id="k-stock" style="font-size:20px;font-weight:700">0</div></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <strong>Останні наряди</strong>
+            <table class="table" id="recent-table"><thead><tr><th>№</th><th>Клієнт</th><th>Сума</th><th>Статус</th></tr></thead><tbody></tbody></table>
+          </div>
+
+          <div class="card">
+            <strong>Низький запас</strong>
+            <div id="low-stock" class="small" style="margin-top:8px">—</div>
+          </div>
+        </div>
+      </div>
+
+      <div id="view-clients" class="view" style="display:none">
+        <div class="card header-row">
+          <div><strong>Клієнти</strong><div class="small">Управління базою клієнтів</div></div>
+          <div><button id="btn-new-client" class="btn">Додати клієнта</button></div>
+        </div>
+        <div class="card">
+          <table class="table" id="clients-table">
+            <thead><tr><th>Ім'я</th><th>Телефон</th><th>Авто</th><th>Записів</th><th>Майстер</th><th>Дії</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="view-orders" class="view" style="display:none">
+        <div class="card header-row">
+          <div><strong>Наряди</strong><div class="small">Створюйте та керуйте нарядами</div></div>
+          <div><button id="btn-new-order" class="btn">Новий наряд</button></div>
+        </div>
+        <div class="card">
+          <table class="table" id="orders-table"><thead><tr><th>№</th><th>Клієнт</th><th>Тип</th><th>Сума</th><th>Статус</th><th>Дії</th></tr></thead><tbody></tbody></table>
+        </div>
+      </div>
+
+      <div id="view-stock" class="view" style="display:none">
+        <div class="card header-row">
+          <div><strong>Склад</strong><div class="small">Товари, залишки, рух</div></div>
+          <div><button id="btn-new-stock" class="btn">Додати товар</button></div>
+        </div>
+        <div class="card">
+          <table class="table" id="stock-table"><thead><tr><th>Назва</th><th>К-ть</th><th>Мін.</th><th>Ціна</th><th>Дії</th></tr></thead><tbody></tbody></table>
+        </div>
+      </div>
+
+      <div id="view-analytics" class="view" style="display:none">
+        <div class="card"><strong>Аналітика</strong><div class="small">Прості звіти</div></div>
+        <div class="card">
+          <div id="analytics-content" class="small">Графіки та статистика будуть тут</div>
+        </div>
+      </div>
+
+      <div id="view-settings" class="view" style="display:none">
+        <div class="card"><strong>Налаштування</strong>
+          <div style="margin-top:8px" class="small">Скинути демо-дані або експортувати базу</div>
+          <div style="margin-top:10px"><button id="btn-reset" class="btn ghost">Відновити демо-дані</button></div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <div class="footer-note">© СТО Фіксики — CRM v2</div>
+</div>
+
+<!-- Modal -->
+<div id="modal" class="modal"><div class="panel" id="modal-inner"></div></div>
 
 <script>
-/* PWA service worker registration */
-if('serviceWorker' in navigator){
-  navigator.serviceWorker.register('sw.js').catch(e=>console.warn('SW err',e));
-}
+/* ====== App state ====== */
+const LS = 'fixiki_crm_v2';
+let state = {
+  users: [], clients: [], stock: [], services: [], orders: [], logs: []
+};
+let currentUser = null;
 
-/* Data model */
-const LS = 'sf_data_v3_pwa';
-let state = { users:[], clients:[], services:[], stock:[], orders:[], logs:[] };
-
-/* Utils */
-function uid(prefix='id'){ return prefix + '_' + Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+/* ====== Utils ====== */
+function uid(pref='id'){ return pref+'_'+Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
 function save(){ localStorage.setItem(LS, JSON.stringify(state)); renderAll(); }
-function load(){ try{ const r = localStorage.getItem(LS); if(r) state = JSON.parse(r); }catch(e){ console.error(e); } if(!state.users) seedDemo(); }
-function show(msg, err=false){ const t = document.getElementById('toast'); t.textContent = msg; t.style.background = err? '#ff6b6b':'#2ecc71'; t.className = 'notification active'; setTimeout(()=> t.className='notification', 3000); }
-function hashPin(pin){ return btoa(String(pin)); } // simple encoding (not secure, but sufficient locally)
-function currentUser(){ return window._CURRENT_USER || null; }
-function setCurrentUser(u){ window._CURRENT_USER = u; updateUserUI(); }
+function load(){ const s = localStorage.getItem(LS); if(s){ try{ state = JSON.parse(s); }catch(e){ console.error(e);} } if(!state.users || state.users.length===0) seedDemo(); }
+function showToast(msg, ok=true){ const el = document.createElement('div'); el.textContent = msg; el.style.position='fixed'; el.style.right='18px'; el.style.bottom='18px'; el.style.padding='8px 12px'; el.style.background = ok? 'var(--success)' : 'var(--danger)'; el.style.color='#042'; el.style.borderRadius='8px'; document.body.appendChild(el); setTimeout(()=>el.remove(),2600); }
+function fmt(n){ return (Number(n)||0).toFixed(2) + ' ₴'; }
+function escape(s){ if(!s) return ''; return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
 
-/* Seed */
+/* ====== Demo seed ====== */
 function seedDemo(){
   state = {
-    users:[
-      {id:uid('u'), name:'Адміністратор', role:'admin', pin:hashPin('1234')},
-      {id:uid('u'), name:'Майстер 1', role:'master', pin:hashPin('1111'), assignedClientIds:[]},
-      {id:uid('u'), name:'Майстер 2', role:'master', pin:hashPin('2222'), assignedClientIds:[]}
-    ],
-    clients:[
-      {id:uid('c'), name:'Іван Петров', phone:'+380971234567', car:'VW Passat', masterId:null},
-      {id:uid('c'), name:'Олег Коваль', phone:'+380631112233', car:'Mercedes Sprinter', masterId:null}
-    ],
-    services:[
-      {id:uid('s'), name:'Заміна масла', price:800},
-      {id:uid('s'), name:'Ремонт ходової', price:900}
-    ],
-    stock:[
-      {id:uid('p'), name:'Масло 5W-40 (1л)', qty:25, min:5, price:350},
-      {id:uid('p'), name:'Колодки (комплект)', qty:5, min:2, price:950}
-    ],
-    orders:[],
-    logs:[]
+    users: [{id:uid('u'), login:'admin', role:'admin', pin:'1234'}, {id:uid('u'), login:'master1', role:'master', pin:'1111'}],
+    clients: [{id:uid('c'), name:'Іван Петров', phone:'+380971234567', car:'VW Passat', history:[]},{id:uid('c'), name:'Олена Іванова', phone:'+380501112233', car:'Toyota Corolla', history:[]}],
+    stock: [{id:uid('p'), name:'Масло 5W-40 (1л)', qty:25, min:5, price:350, desc:'Моторне масло'},{id:uid('p'), name:'Фільтр масляний', qty:10, min:2, price:120, desc:'OEM'}],
+    services: [{id:uid('s'), name:'Заміна масла', price:800},{id:uid('s'), name:'Діагностика', price:600}],
+    orders: [],
+    logs: []
   };
   save();
 }
 
-/* Rendering */
+/* ====== Auth (simple for demo) ====== */
+function promptLogin(){
+  const login = prompt('Логін: (admin/master1)','admin');
+  if(!login) return;
+  const user = state.users.find(u=>u.login===login);
+  if(!user){ alert('Користувача не знайдено'); return; }
+  const pin = prompt('PIN:','1234');
+  if(pin !== user.pin){ alert('Невірний PIN'); return; }
+  currentUser = user;
+  document.getElementById('user-name').textContent = currentUser.login;
+  document.getElementById('user-role').textContent = 'Роль: ' + currentUser.role;
+  document.getElementById('btn-logout').style.display = 'inline-block';
+  document.getElementById('welcome').textContent = 'Ви увійшли як ' + currentUser.login;
+  renderAll();
+}
+
+/* ====== Render functions ====== */
 function renderAll(){
-  renderUserList();
+  renderDashboard();
   renderClients();
   renderOrders();
   renderStock();
-  renderServices();
-  updateDashboard();
-  renderUsersTab();
+  renderAnalytics();
+  renderOverview();
 }
-function renderUserList(){
-  const sel = document.getElementById('login-user');
-  sel.innerHTML = state.users.map(u=>`<option value="${u.id}">${u.name} (${u.role})</option>`).join('');
+function renderOverview(){
+  document.getElementById('overview-chips').innerHTML = `<div class="tag">Клієнтів: ${state.clients.length}</div><div class="tag">Нарядів: ${state.orders.length}</div><div class="tag">Позицій: ${state.stock.length}</div>`;
 }
-function updateUserUI(){
-  const ui = document.getElementById('user-info');
-  const user = currentUser();
-  if(user){
-    ui.innerHTML = `<div class="user-badge">${user.name} • ${user.role}</div>`;
-    document.getElementById('admin-actions').classList.toggle('hidden', user.role !== 'admin');
-    document.getElementById('master-actions').classList.toggle('hidden', user.role !== 'master');
-    document.getElementById('users-tab').style.display = user.role === 'admin' ? 'block' : 'none';
-  } else {
-    ui.innerHTML = '';
-  }
+function renderDashboard(){
+  document.getElementById('k-clients').textContent = state.clients.length;
+  const open = state.orders.filter(o=> o.status !== 'виконано' && o.status !== 'скасовано').length;
+  document.getElementById('k-open').textContent = open;
+  document.getElementById('k-stock').textContent = state.stock.length;
+  const tbody = document.querySelector('#recent-table tbody'); tbody.innerHTML = '';
+  state.orders.slice().reverse().slice(0,6).forEach(o=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${o.id.substring(0,6)}</td><td>${escape(o.clientName)}</td><td>${fmt(o.total)}</td><td>${escape(o.status)}</td>`;
+    tbody.appendChild(tr);
+  });
+  const low = state.stock.filter(p=>p.qty < p.min);
+  document.getElementById('low-stock').innerHTML = low.length ? low.map(p=>`${escape(p.name)} (${p.qty}/${p.min})`).join('<br>') : '—';
+  document.getElementById('last-updated').textContent = state.orders.length ? new Date(Math.max(...state.orders.map(o=>o.created))).toLocaleString() : '—';
 }
 function renderClients(){
-  const tbody = document.querySelector('#clients-table tbody');
-  tbody.innerHTML = '';
-  const user = currentUser();
-  const list = state.clients.filter(c => {
-    if(!user) return false;
-    if(user.role === 'admin') return true;
-    // master sees only assigned clients
-    return user.assignedClientIds && user.assignedClientIds.includes(c.id);
-  });
-  list.forEach(c=>{
-    const master = state.users.find(u=>u.id===c.masterId);
+  const tbody = document.querySelector('#clients-table tbody'); tbody.innerHTML = '';
+  state.clients.forEach(c=>{
     const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${c.name}</td><td>${c.phone}</td><td>${c.car}</td><td>${master?master.name:'—'}</td>
-      <td>
-        ${currentUser() && currentUser().role==='admin' ? `<button class="btn" data-action="assign" data-id="${c.id}">Призначити</button>` : ''}
-        <button class="btn" data-action="new-order" data-id="${c.id}">Наряд</button>
-      </td>`;
+    const master = state.users.find(u=>u.id===c.masterId);
+    tr.innerHTML = `<td>${escape(c.name)}</td><td>${escape(c.phone)}</td><td>${escape(c.car||'')}</td><td>${(c.history||[]).length}</td><td>${master?escape(master.login):'—'}</td>
+      <td><button class="btn" data-action="view-client" data-id="${c.id}">Відкрити</button> <button class="btn ghost" data-action="edit-client" data-id="${c.id}">Ред.</button></td>`;
     tbody.appendChild(tr);
   });
 }
 function renderOrders(){
   const tbody = document.querySelector('#orders-table tbody'); tbody.innerHTML = '';
-  const user = currentUser();
-  const list = state.orders.filter(o => {
-    if(!user) return false;
-    if(user.role==='admin') return true;
-    return o.masterId === user.id;
-  });
-  list.forEach(o=>{
-    const client = state.clients.find(c=>c.id===o.clientId);
-    const master = state.users.find(u=>u.id===o.masterId);
+  state.orders.slice().reverse().forEach(o=>{
     const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${o.id.substring(0,6)}</td><td>${client?client.name:'—'}</td><td>${o.type}</td><td>${master?master.name:'—'}</td><td>${(o.total||0).toFixed(2)} ₴</td><td>${o.status}</td>
-      <td>${currentUser() && currentUser().role==='master' ? `<button class="btn" data-action="take-stock" data-id="${o.id}">Взяти зі складу</button>` : ''}<button class="btn" data-action="view-order" data-id="${o.id}">Відкрити</button></td>`;
+    tr.innerHTML = `<td>${o.id.substring(0,6)}</td><td>${escape(o.clientName)}</td><td>${escape(o.type)}</td><td>${fmt(o.total)}</td><td>${escape(o.status)}</td>
+      <td><button class="btn" data-action="view-order" data-id="${o.id}">Відкрити</button></td>`;
     tbody.appendChild(tr);
   });
 }
 function renderStock(){
-  const tbody = document.querySelector('#stock-table tbody'); tbody.innerHTML='';
+  const tbody = document.querySelector('#stock-table tbody'); tbody.innerHTML = '';
   state.stock.forEach(p=>{
-    const tr=document.createElement('tr');
-    tr.innerHTML = `<td>${p.name}</td><td>${p.qty}</td><td>${p.min}</td><td>${currentUser() && currentUser().role==='admin'?`<button class="btn" data-action="edit-stock" data-id="${p.id}">Ред.</button>`:''}</td>`;
+    const low = p.qty < p.min;
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${escape(p.name)}</td><td>${p.qty} ${low?'<span class="small" style="color:var(--danger)">(низький)</span>':''}</td><td>${p.min}</td><td>${fmt(p.price)}</td><td><button class="btn ghost" data-action="edit-stock" data-id="${p.id}">Ред.</button> <button class="btn" data-action="take-stock" data-id="${p.id}">Списати</button></td>`;
     tbody.appendChild(tr);
   });
 }
-function renderServices(){ const tbody=document.querySelector('#services-table tbody'); tbody.innerHTML=''; state.services.forEach(s=>{ const tr=document.createElement('tr'); tr.innerHTML=`<td>${s.name}</td><td>${s.price} ₴</td><td>${currentUser() && currentUser().role==='admin'?`<button class="btn" data-action="edit-service" data-id="${s.id}">Ред.</button>`:''}</td>`; tbody.appendChild(tr); }); }
-function updateDashboard(){
-  document.getElementById('stat-clients').textContent = state.clients.length;
-  document.getElementById('stat-orders').textContent = state.orders.length;
-  const rev = state.orders.filter(o=> o.created >= Date.now()-30*24*3600*1000).reduce((s,o)=>s+(o.total||0),0);
-  document.getElementById('stat-rev').textContent = rev.toFixed(2) + ' ₴';
-  document.getElementById('recent-changes').textContent = state.logs.slice().slice(-5).map(l=>l.msg).reverse().join(' • ');
+function renderAnalytics(){
+  document.getElementById('analytics-content').textContent = 'Найпопулярніші послуги: ' + (state.services.map(s=>s.name).join(', ') || '—');
 }
 
-/* Users management (admin) */
-function renderUsersTab(){
-  const div = document.getElementById('users-list'); div.innerHTML='';
-  state.users.filter(u=>u.role==='master').forEach(u=>{
-    const el = document.createElement('div'); el.style.display='flex'; el.style.justifyContent='space-between'; el.style.alignItems='center'; el.style.padding='6px 0';
-    el.innerHTML = `<div>${u.name} (PIN: ${atob(u.pin)})</div><div><button class="btn" data-action="del-user" data-id="${u.id}">Видалити</button></div>`;
-    div.appendChild(el);
-  });
-}
-
-/* Actions */
-document.getElementById('add-user').addEventListener('click', ()=>{
-  const name = document.getElementById('new-user-name').value.trim();
-  const pin = document.getElementById('new-user-pin').value.trim();
-  if(!name || !pin){ show('Введіть імя та PIN', true); return; }
-  const u = {id:uid('u'), name, role:'master', pin:hashPin(pin), assignedClientIds:[]};
-  state.users.push(u); save(); show('Майстра додано');
-});
-document.getElementById('login-btn').addEventListener('click', ()=>{
-  const uidSel = document.getElementById('login-user').value;
-  const pin = document.getElementById('login-pin').value.trim();
-  const user = state.users.find(u=>u.id===uidSel);
-  if(!user){ show('Користувача не знайдено', true); return; }
-  if(user.pin === hashPin(pin)){
-    setCurrentUser(user);
-    document.getElementById('login-modal').classList.remove('active');
-    document.getElementById('app').style.display='flex';
-    renderAll();
-    show('Вхід успішний');
-  } else show('Невірний PIN', true);
-});
-document.getElementById('login-demo').addEventListener('click', ()=>{ seedDemo(); document.getElementById('login-modal').classList.remove('active'); document.getElementById('app').style.display='flex'; setCurrentUser(state.users.find(u=>u.role==='admin')); renderAll(); });
-
-document.getElementById('logout').addEventListener('click', ()=>{ setCurrentUser(null); document.getElementById('app').style.display='none'; document.getElementById('login-modal').classList.add('active'); });
-
-document.getElementById('btn-add-client').addEventListener('click', ()=> openAddClient());
-document.getElementById('btn-add-order-master').addEventListener('click', ()=> openOrderForm(currentUser()?.id));
-
-document.getElementById('export-json').addEventListener('click', ()=> {
-  const a = document.createElement('a'); a.href = 'data:application/json,'+encodeURIComponent(JSON.stringify(state,null,2)); a.download='fixiki_pwa.json'; a.click();
-  show('Експорт JSON готовий');
-});
-document.getElementById('import-file').addEventListener('change', (e)=> {
-  const f = e.target.files[0]; if(!f) return; const r=new FileReader(); r.onload=()=>{ try{ const imp = JSON.parse(r.result); if(imp.users) { state=imp; save(); show('Імпортовано'); } else show('Невірний формат', true);}catch(err){ show('Помилка імпорту', true);} }; r.readAsText(f);
-});
-
-/* Delegated actions */
-document.body.addEventListener('click', (e)=>{
-  const btn = e.target.closest('[data-action]'); if(!btn) return;
-  const act = btn.dataset.action, id = btn.dataset.id;
-  if(act==='assign'){ openAssignMaster(id); }
-  else if(act==='new-order'){ openOrderForm(id); }
-  else if(act==='view-order'){ viewOrder(id); }
-  else if(act==='take-stock'){ takeStockForOrder(id); }
-  else if(act==='del-user'){ state.users = state.users.filter(u=>u.id!==id); save(); show('Майстра видалено'); }
-  else if(act==='edit-stock'){ editStock(id); }
-});
-
-/* Add client (admin) */
-function openAddClient(){
-  const html = `<div style="display:flex;flex-direction:column;gap:8px">
-    <input id="c-name" placeholder="Ім'я">
-    <input id="c-phone" placeholder="Телефон">
-    <input id="c-car" placeholder="Авто">
-    <select id="c-master"><option value="">— без майстра —</option>${state.users.filter(u=>u.role==='master').map(u=>`<option value="${u.id}">${u.name}</option>`).join('')}</select>
-    <div style="display:flex;gap:8px;justify-content:flex-end"><button id="save-client" class="btn">Зберегти</button> <button data-close class="btn secondary">Відмінити</button></div>
-  </div>`;
-  openModal(html);
-  document.getElementById('save-client').addEventListener('click', ()=>{
-    const name = document.getElementById('c-name').value.trim();
-    const phone = document.getElementById('c-phone').value.trim();
-    const car = document.getElementById('c-car').value.trim();
-    const masterId = document.getElementById('c-master').value || null;
-    if(!name || !phone){ show('Імя та телефон потрібні', true); return; }
-    const c = {id:uid('c'), name, phone, car, masterId};
-    state.clients.push(c);
-    // assign client id to master assignedClientIds
-    if(masterId){
-      const m = state.users.find(u=>u.id===masterId);
-      if(m){ m.assignedClientIds = m.assignedClientIds || []; m.assignedClientIds.push(c.id); }
-    }
-    state.logs.push({ts:Date.now(), msg:`Додано клієнта ${name}`});
-    save(); closeModal(); show('Клієнта додано');
-  });
-}
-
-/* Assign master to client */
-function openAssignMaster(clientId){
-  const html = `<div style="display:flex;flex-direction:column;gap:8px">
-    <div>Оберіть майстра для клієнта</div>
-    <select id="assign-master">${state.users.filter(u=>u.role==='master').map(u=>`<option value="${u.id}">${u.name}</option>`).join('')}</select>
-    <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:8px"><button id="save-assign" class="btn">Призначити</button> <button data-close class="btn secondary">Відмінити</button></div>
-  </div>`;
-  openModal(html);
-  document.getElementById('save-assign').addEventListener('click', ()=>{
-    const masterId = document.getElementById('assign-master').value;
-    const client = state.clients.find(c=>c.id===clientId);
-    if(client){
-      // remove from previous master's list
-      if(client.masterId){
-        const prev = state.users.find(u=>u.id===client.masterId);
-        if(prev && prev.assignedClientIds) prev.assignedClientIds = prev.assignedClientIds.filter(x=>x!==client.id);
-      }
-      client.masterId = masterId;
-      const m = state.users.find(u=>u.id===masterId);
-      if(m){ m.assignedClientIds = m.assignedClientIds || []; if(!m.assignedClientIds.includes(client.id)) m.assignedClientIds.push(client.id); }
-      state.logs.push({ts:Date.now(), msg:`Клієнту ${client.name} призначено майстра`});
-      save(); closeModal(); show('Призначено');
-    }
-  });
-}
-
-/* Order form */
-function openOrderForm(clientId=null){
-  const user = currentUser();
-  if(!user){ show('Не вхід'); return; }
-  const clientOptions = state.clients.map(c=>`<option value="${c.id}">${c.name} ${c.car?'- '+c.car:''}</option>`).join('');
-  const html = `<div style="display:flex;flex-direction:column;gap:8px">
-    <select id="o-client">${clientOptions}</select>
-    <select id="o-type"><option value="робота">Виконані роботи</option><option value="запчастини">Запчастини</option></select>
-    <div id="o-items"></div>
-    <div style="display:flex;gap:8px;justify-content:flex-end"><button id="add-o-item" class="btn">Додати позицію</button><button id="save-order" class="btn">Зберегти</button></div>
-  </div>`;
-  openModal(html);
-  if(clientId) document.getElementById('o-client').value = clientId;
-  document.getElementById('add-o-item').addEventListener('click', ()=> {
-    const row = document.createElement('div'); row.style.display='flex'; row.style.gap='6px';
-    row.innerHTML = `<input class="oi-name" placeholder="Назва"><input class="oi-qty" type="number" value="1" style="width:80px"><input class="oi-price" type="number" value="0" style="width:100px"><button class="btn ghost" onclick="this.parentElement.remove()">X</button>`;
-    document.getElementById('o-items').appendChild(row);
-  });
-  document.getElementById('save-order').addEventListener('click', ()=>{
-    const clientId = document.getElementById('o-client').value;
-    const type = document.getElementById('o-type').value;
-    const items = Array.from(document.querySelectorAll('#o-items .oi-name')).map((el,i)=>({
-      name: el.value,
-      qty: Number(document.querySelectorAll('#o-items .oi-qty')[i].value||0),
-      price: Number(document.querySelectorAll('#o-items .oi-price')[i].value||0)
-    })).filter(it=>it.name && it.qty>0);
-    if(items.length===0){ show('Додайте позиції', true); return; }
-    const total = items.reduce((s,it)=>s + it.qty*it.price,0);
-    const order = {id:uid('o'), clientId, masterId: user.role==='master'?user.id:null, type: type==='запчастини'?'запчастини':'робота', items, total, status:'в роботі', created:Date.now()};
-    state.orders.push(order);
-    state.logs.push({ts:Date.now(), msg:`Додано наряд ${order.id}`});
-    save(); closeModal(); show('Наряд створено');
-  });
-}
-
-/* View order */
-function viewOrder(id){
-  const o = state.orders.find(x=>x.id===id); if(!o) return;
-  const client = state.clients.find(c=>c.id===o.clientId);
-  const itemsHtml = o.items.map(it=>`<tr><td>${it.name}</td><td>${it.qty}</td><td>${it.price} ₴</td><td>${(it.qty*it.price).toFixed(2)} ₴</td></tr>`).join('');
-  const html = `<h3>Наряд ${o.id}</h3><div class="small">Клієнт: ${client?client.name:'—'}</div><div class="card"><table class="table"><thead><tr><th>Назва</th><th>К-ть</th><th>Ціна</th><th>Сума</th></tr></thead><tbody>${itemsHtml}</tbody></table></div>
-    <div style="display:flex;gap:8px"><button id="mark-done" class="btn">Позначити виконано</button><button id="print-pdf" class="btn secondary">Друк PDF</button></div>`;
-  openModal(html);
-  document.getElementById('mark-done').addEventListener('click', ()=>{
-    o.status='виконано'; state.logs.push({ts:Date.now(), msg:`Наряд ${o.id} виконано`}); save(); closeModal(); show('Наряд виконано');
-  });
-  document.getElementById('print-pdf').addEventListener('click', ()=> {
-    if(window.jspdf && window.jspdf.jsPDF){
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF();
-      let y=20; doc.setFontSize(14); doc.text('СТО Фіксики — Наряд',14,y); y+=8;
-      doc.setFontSize(11); doc.text(`Наряд: ${o.id}`,14,y); y+=6; doc.text(`Клієнт: ${client?client.name:''}`,14,y); y+=8;
-      o.items.forEach(it=>{ doc.text(`${it.name} x${it.qty} — ${it.price} ₴`,14,y); y+=6; if(y>270){ doc.addPage(); y=14; } });
-      y+=8; doc.text(`Разом: ${o.total.toFixed(2)} ₴`,14,y);
-      doc.save(`narjad_${o.id}.pdf`); show('PDF збережено');
-    } else show('jsPDF не завантажено', true);
-  });
-}
-
-/* Take stock for order (master) */
-function takeStockForOrder(orderId){
-  const o = state.orders.find(x=>x.id===orderId);
-  if(!o) return;
-  // show list of stock items and allow to deduct quantities
-  let html = '<h3>Списати зі складу</h3><div style="display:flex;flex-direction:column;gap:8px">';
-  state.stock.forEach(s=>{
-    html += `<div style="display:flex;gap:8px;align-items:center"><div style="flex:1">${s.name} (зараз: ${s.qty})</div><input type="number" min="0" max="${s.qty}" value="0" id="take_${s.id}" style="width:80px"></div>`;
-  });
-  html += `<div style="display:flex;justify-content:flex-end;gap:8px;margin-top:8px"><button id="do-take" class="btn">Списати</button> <button data-close class="btn secondary">Відмінити</button></div></div>`;
-  openModal(html);
-  document.getElementById('do-take').addEventListener('click', ()=>{
-    state.stock.forEach(s=>{
-      const val = Number(document.getElementById('take_'+s.id).value||0);
-      if(val>0){
-        if(val > s.qty){ show(`Недостатньо ${s.name}`, true); return; }
-        s.qty -= val;
-      }
-    });
-    state.logs.push({ts:Date.now(), msg:`Майстер ${currentUser().name} списав матеріали для ${orderId}`});
-    save(); closeModal(); show('Списано зі складу');
-  });
-}
-
-/* edit stock/service (admin) */
-function editStock(id){
-  const p = state.stock.find(x=>x.id===id);
-  const html = `<div style="display:flex;flex-direction:column;gap:8px"><input id="e-name" value="${p.name}"><input id="e-qty" type="number" value="${p.qty}"><input id="e-min" type="number" value="${p.min}"><input id="e-price" type="number" value="${p.price}"><div style="display:flex;gap:8px;justify-content:flex-end"><button id="save-stock" class="btn">Зберегти</button><button data-close class="btn secondary">Відмінити</button></div></div>`;
-  openModal(html);
-  document.getElementById('save-stock').addEventListener('click', ()=>{
-    p.name = document.getElementById('e-name').value.trim();
-    p.qty = Number(document.getElementById('e-qty').value||0);
-    p.min = Number(document.getElementById('e-min').value||0);
-    p.price = Number(document.getElementById('e-price').value||0);
-    save(); closeModal(); show('Оновлено');
-  });
-}
-function editService(id){
-  const s = state.services.find(x=>x.id===id);
-  const html = `<div style="display:flex;flex-direction:column;gap:8px"><input id="s-name" value="${s.name}"><input id="s-price" type="number" value="${s.price}"><div style="display:flex;gap:8px;justify-content:flex-end"><button id="save-s" class="btn">Зберегти</button><button data-close class="btn secondary">Відмінити</button></div></div>`;
-  openModal(html);
-  document.getElementById('save-s').addEventListener('click', ()=>{ s.name = document.getElementById('s-name').value.trim(); s.price = Number(document.getElementById('s-price').value||0); save(); closeModal(); show('Оновлено'); });
-}
-
-/* Modal helpers */
-function openModal(html){ document.getElementById('modal').classList.add('active'); document.getElementById('modal-inner').innerHTML = html; const closeBtn = document.querySelector('[data-close]'); if(closeBtn) closeBtn.addEventListener('click', closeModal); }
-function closeModal(){ document.getElementById('modal').classList.remove('active'); document.getElementById('modal-inner').innerHTML=''; }
-
-/* Assign via button in clients table */
-function assignClientToMaster(clientId, masterId){
-  const client = state.clients.find(c=>c.id===clientId);
-  if(!client) return;
-  // remove from previous master list
-  if(client.masterId){
-    const prev = state.users.find(u=>u.id===client.masterId);
-    if(prev && prev.assignedClientIds) prev.assignedClientIds = prev.assignedClientIds.filter(x=>x!==client.id);
-  }
-  client.masterId = masterId;
-  const m = state.users.find(u=>u.id===masterId);
-  if(m){ m.assignedClientIds = m.assignedClientIds || []; if(!m.assignedClientIds.includes(client.id)) m.assignedClientIds.push(client.id); }
-  state.logs.push({ts:Date.now(), msg:`Клієнту ${client.name} призначено майстра ${m.name}`});
-  save(); show('Призначено майстра');
-}
-
-/* Open assign modal */
-function openAssignMaster(clientId){
-  openAssignMaster; // placeholder
-}
-
-/* Delegation for menu */
+/* ====== Actions ====== */
 document.querySelectorAll('.menu button').forEach(b=> b.addEventListener('click', ()=>{
   document.querySelectorAll('.menu button').forEach(x=>x.classList.remove('active'));
   b.classList.add('active');
   const view = b.dataset.view;
-  document.querySelectorAll('.view').forEach(v=>v.classList.add('hidden'));
-  document.getElementById('view-'+view).classList.remove('hidden');
-  document.getElementById('page-title').textContent = b.textContent;
+  document.querySelectorAll('.view').forEach(v=>v.style.display='none');
+  document.getElementById('view-'+view).style.display='block';
 }));
 
-/* storage event to sync across tabs */
-window.addEventListener('storage', (e)=>{ if(e.key===LS) load(); });
+document.getElementById('sidebar-toggle').addEventListener('click', ()=> promptLogin());
 
-/* initial load */
-load();
-renderAll();
+document.getElementById('btn-new-client').addEventListener('click', ()=> openClientModal());
+document.getElementById('btn-new-order').addEventListener('click', ()=> openOrderModal());
+document.getElementById('btn-new-stock').addEventListener('click', ()=> openStockModal());
 
-/* expose some functions to global for inline handlers */
-window.openOrderForm = openOrderForm;
-window.viewOrder = viewOrder;
-
-/* Keyboard shortcut: ctrl+shift+d to reset demo */
-document.addEventListener('keydown', (e)=>{ if(e.ctrlKey && e.shiftKey && e.key==='D'){ seedDemo(); show('Demo reset'); } });
-
-/* start login UI */
-renderUserList();
-document.getElementById('login-btn').addEventListener('click', ()=> {
-  const uid = document.getElementById('login-user').value;
-  const pin = document.getElementById('login-pin').value.trim();
-  const user = state.users.find(u=>u.id===uid);
-  if(user && user.pin === hashPin(pin)){ setCurrentUser(user); document.getElementById('login-modal').classList.remove('active'); document.getElementById('app').style.display='flex'; renderAll(); show('Вхід успішний'); }
-  else show('Невірний логін/PIN', true);
+document.body.addEventListener('click', (e)=>{
+  const t = e.target.closest('[data-action]');
+  if(!t) return;
+  const act = t.dataset.action, id = t.dataset.id;
+  if(act==='view-client') viewClient(id);
+  if(act==='edit-client') editClient(id);
+  if(act==='view-order') viewOrder(id);
+  if(act==='edit-stock') openStockModal(id);
+  if(act==='take-stock') openTakeStock(id);
 });
 
-/* show users in login select */
-renderUserList();
+/* ====== Modals ====== */
+const modal = document.getElementById('modal');
+function openModal(html){ modal.classList.add('active'); document.getElementById('modal-inner').innerHTML = html; document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click', closeModal)); }
+function closeModal(){ modal.classList.remove('active'); document.getElementById('modal-inner').innerHTML=''; }
 
-</script>
-</body>
-</html>
+/* ====== Client Modal ====== */
+function openClientModal(clientId=null){
+  const c = clientId ? state.clients.find(x=>x.id===clientId) : {};
+  const html = `<h3>${clientId?'Редагувати клієнта':'Додати клієнта'}</h3>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px">
+      <input id="c-name" class="input" placeholder="Ім'я" value="${escape(c.name||'')}">
+      <input id="c-phone" class="input" placeholder="Телефон" value="${escape(c.phone||'')}">
+      <input id="c-car" class="input" placeholder="Авто" value="${escape(c.car||'')}">
+      <div style="display:flex;justify-content:flex-end;gap:8px"><button id="save-client" class="btn">Зберегти</button><button data-close class="btn ghost">Відмінити</button></div>
+    </div>`;
+  openModal(html);
+  document.getElementById('save-client').addEventListener('click', ()=>{
+    const name = document.getElementById('c-name').value.trim(); const phone = document.getElementById('c-phone').value.trim(); const car = document.getElementById('c-car').value.trim();
+    if(!name || !phone){ alert('Імя та телефон потрібні'); return; }
+    if(clientId){ Object.assign(c,{name,phone,car}); state.logs.push({ts:Date.now(), msg:`Клієнт оновлений: ${name}`}); }
+    else{ state.clients.push({id:uid('c'), name, phone, car, history:[]}); state.logs.push({ts:Date.now(), msg:`Додано клієнта: ${name}`}); }
+    save(); closeModal(); showToast('Клієнта збережено');
+  });
+}
+function editClient(id){ openClientModal(id); }
+function viewClient(id){
+  const c = state.clients.find(x=>x.id===id); if(!c) return;
+  const hist = (c.history||[]).slice().reverse().map(h=>`<tr><td>${new Date(h.date).toLocaleString()}</td><td>${escape(h.desc)}</td><td>${fmt(h.cost)}</td></tr>`).join('');
+  const html = `<h3>${escape(c.name)}</h3><div class="small">Тел: ${escape(c.phone)} • Авто: ${escape(c.car||'')}</div>
+    <div class="card" style="margin-top:8px"><strong>Історія</strong><table class="table"><thead><tr><th>Дата</th><th>Опис</th><th>Вартість</th></tr></thead><tbody>${hist}</tbody></table>
+    <div style="margin-top:8px"><button id="add-history" class="btn">Додати запис</button></div></div>
+    <div style="display:flex;justify-content:flex-end;gap:8px"><button data-close class="btn ghost">Закрити</button></div>`;
+  openModal(html);
+  document.getElementById('add-history').addEventListener('click', ()=>{
+    const hHtml = `<h3>Додати запис</h3><div style="display:flex;flex-direction:column;gap:8px"><input id="h-desc" class="input" placeholder="Опис"><input id="h-cost" class="input" placeholder="Вартість"><div style="display:flex;justify-content:flex-end;gap:8px"><button id="save-h" class="btn">Додати</button><button data-close class="btn ghost">Відмінити</button></div></div>`;
+    openModal(hHtml);
+    document.getElementById('save-h').addEventListener('click', ()=>{
+      const desc = document.getElementById('h-desc').value.trim(); const cost = Number(document.getElementById('h-cost').value||0);
+      if(!desc) { alert('Опис потрібен'); return; }
+      c.history = c.history || []; c.history.push({date:Date.now(), desc, cost}); state.logs.push({ts:Date.now(), msg:`Додано в історію ${c.name}: ${desc}`}); save(); closeModal(); showToast('Запис додано');
+    });
+  });
+}
+
+/* ====== Orders ====== */
+function openOrderModal(){
+  const html = `<h3>Новий наряд</h3><div style="display:flex;flex-direction:column;gap:8px;margin-top:8px">
+    <label>Клієнт</label><select id="o-client" class="input">${state.clients.map(c=>`<optio...
